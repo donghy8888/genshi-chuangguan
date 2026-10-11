@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#7c5cff">
+<title>根式闯关 · 二次根式每日练</title>
+<style>
+:root{--ink:#2d2a4a;--sub:#7a7699;--pri:#ff7a59;--ok:#22c55e;--warn:#ff9f43;--gold:#ffc83d;--pur:#7c5cff;--blue:#4f8bff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%}
+body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC","Source Han Sans SC",system-ui,sans-serif;color:var(--ink);background:linear-gradient(165deg,#8b6dff 0%,#5aa9ff 55%,#5ee0d0 100%);background-attachment:fixed;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;color:inherit;cursor:pointer}
+#app{max-width:520px;margin:0 auto;min-height:100vh;padding:14px 14px 104px}
+#app.noNav{padding-bottom:30px}
+.card{background:#fff;border-radius:24px;padding:18px;margin:14px 0;box-shadow:0 8px 0 rgba(60,40,140,.12),0 14px 30px rgba(40,20,120,.12)}
+h2{margin:0 0 10px;font-size:20px}
+.sub{color:var(--sub);font-size:14px}
+.row{display:flex;align-items:center;gap:10px}
+.sp{flex:1}
+.btn{border:none;border-radius:18px;padding:15px 20px;font-size:18px;font-weight:800;min-height:54px;background:#eef0ff;color:var(--pur);box-shadow:0 5px 0 rgba(0,0,0,.12);transition:transform .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.12)}
+.btn.pri{background:linear-gradient(180deg,#ff9a6b,#ff6a4d);color:#fff;box-shadow:0 5px 0 #d94f33}
+.btn.ok{background:linear-gradient(180deg,#4ade80,#22c55e);color:#fff;box-shadow:0 5px 0 #15913f}
+.btn.pur{background:linear-gradient(180deg,#9b83ff,#7c5cff);color:#fff;box-shadow:0 5px 0 #5a3fd6}
+.btn.gold{background:linear-gradient(180deg,#ffe07a,#ffbf2e);color:#6b4500;box-shadow:0 5px 0 #d99a10}
+.btn.ghost{background:#f3f2fa;color:var(--sub)}
+.btn.block{display:block;width:100%}
+.btn:disabled{opacity:.6}
+.top{display:flex;align-items:center;gap:10px;color:#fff}
+.lvchip{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.22);border-radius:18px;padding:6px 10px;flex:1;min-width:0}
+.lvnum{background:var(--gold);color:#6b4500;font-weight:900;border-radius:12px;padding:4px 8px;font-size:14px;white-space:nowrap}
+.lvt{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.xpbar{height:9px;background:rgba(255,255,255,.35);border-radius:9px;overflow:hidden;margin-top:4px}
+.xpbar i{display:block;height:100%;background:linear-gradient(90deg,#ffe07a,#ffb02e);border-radius:9px;transition:width .6s}
+.fire{background:rgba(255,255,255,.22);border-radius:18px;padding:8px 12px;font-weight:900;font-size:18px;white-space:nowrap}
+.iconbtn{border:none;background:rgba(255,255,255,.22);border-radius:16px;width:46px;height:46px;font-size:22px;color:#fff;flex:none}
+.hero{display:flex;align-items:center;gap:12px;color:#fff;margin:12px 4px 0}
+.hero .bub{background:#fff;color:var(--ink);border-radius:18px;padding:10px 14px;font-size:15px;font-weight:600;position:relative;box-shadow:0 6px 16px rgba(0,0,0,.12)}
+.hero .bub:before{content:"";position:absolute;left:-8px;top:18px;border:8px solid transparent;border-right-color:#fff;border-left:0}
+.mascot{flex:none;animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-5px)}}
+.daily{background:linear-gradient(135deg,#fff 0%,#fff6ec 100%)}
+.daily .big{font-size:22px;font-weight:900}
+.pill{display:inline-block;background:#f0edff;color:var(--pur);border-radius:12px;padding:3px 10px;font-size:13px;font-weight:700;margin:2px 4px 2px 0}
+.pill.o{background:#fff1e6;color:#e2672f}
+.pill.g{background:#e7f9ee;color:#15913f}
+.prog{height:14px;background:#f0eef8;border-radius:10px;overflow:hidden}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,#7c5cff,#4fc3ff);border-radius:10px}
+.calh{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.calh button{border:none;background:#f3f2fa;border-radius:12px;width:40px;height:40px;font-size:18px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center}
+.cw{font-size:12px;color:var(--sub);font-weight:700}
+.cd{aspect-ratio:1;border-radius:12px;background:#f6f5fb;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;color:#aaa6c4;position:relative}
+.cd.e{background:none}
+.cd.on{background:linear-gradient(180deg,#ffd27a,#ff9a5a);color:#fff;font-weight:800}
+.cd .fl{font-size:14px;line-height:1}
+.cd.on .dn{font-size:11px}
+.cd.td{outline:3px solid var(--pur);outline-offset:-3px;color:var(--pur);font-weight:900}
+.cd.on.td{color:#fff}
+#nav{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:rgba(255,255,255,.96);box-shadow:0 -6px 20px rgba(40,20,120,.15);z-index:20;border-radius:22px 22px 0 0}
+#nav .in{display:flex;max-width:520px;width:100%}
+#nav button{flex:1;border:none;background:none;padding:6px 0;font-size:12px;font-weight:700;color:var(--sub);display:flex;flex-direction:column;align-items:center;gap:2px;min-height:56px;border-radius:14px}
+#nav button b{font-size:24px;line-height:1.1}
+#nav button.on{color:var(--pur);background:#f0edff}
+.map{position:relative;margin:4px 0 10px}
+.map svg.path{position:absolute;left:0;top:0;width:100%;height:100%}
+.node{position:absolute;transform:translate(-50%,-50%);border:none;background:none;padding:0;display:flex;flex-direction:column;align-items:center;width:120px}
+.node .c{width:78px;height:78px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;color:#fff;background:linear-gradient(180deg,#9b83ff,#6d4cf5);box-shadow:0 6px 0 #4b2fc4,0 10px 20px rgba(0,0,0,.2);position:relative}
+.node.passed .c{background:linear-gradient(180deg,#ffe07a,#ffb52e);box-shadow:0 6px 0 #d99a10,0 10px 20px rgba(0,0,0,.2);color:#6b4500}
+.node.locked .c{background:linear-gradient(180deg,#d9d6ea,#b9b4d3);box-shadow:0 6px 0 #9893b5;color:#fff}
+.node.cur .c{animation:pulse 1.4s infinite}
+.node.boss .c{width:96px;height:96px;font-size:44px;background:linear-gradient(180deg,#ff8a8a,#e5484d);box-shadow:0 6px 0 #a8262b,0 10px 20px rgba(0,0,0,.25)}
+.node.boss.locked .c{background:linear-gradient(180deg,#d9d6ea,#b9b4d3);box-shadow:0 6px 0 #9893b5}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.node .lb{margin-top:8px;background:#fff;border-radius:12px;padding:3px 9px;font-size:13px;font-weight:800;box-shadow:0 3px 0 rgba(0,0,0,.1);white-space:nowrap}
+.node .st{font-size:15px;letter-spacing:-1px;margin-top:3px;height:18px}
+.star-off{filter:grayscale(1);opacity:.35}
+.cur-flag{position:absolute;top:-30px;font-size:26px;animation:bob 1.2s infinite}
+.qtop{display:flex;align-items:center;gap:10px;color:#fff}
+.dots{display:flex;gap:6px;flex:1;justify-content:center;flex-wrap:wrap}
+.dot{width:22px;height:10px;border-radius:6px;background:rgba(255,255,255,.4)}
+.dot.cur{background:#fff;width:34px}
+.dot.g{background:#4ade80}.dot.o{background:#ffb067}
+.combo{background:linear-gradient(180deg,#ffe07a,#ffb02e);color:#6b4500;border-radius:14px;padding:6px 10px;font-weight:900;white-space:nowrap}
+.combo.pop{animation:pop .5s}
+@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
+.qcard{padding:22px 18px}
+.qtag{font-size:13px;font-weight:800;color:var(--pur);background:#f0edff;display:inline-block;padding:4px 10px;border-radius:10px;margin-bottom:10px}
+.qtag.rev{background:#fff1e6;color:#e2672f;margin-left:6px}
+.stem{font-size:22px;line-height:1.9;font-weight:700;word-break:break-word}
+.opts{display:grid;gap:12px;margin-top:6px}
+.opt{display:flex;align-items:center;gap:12px;border:3px solid #e8e5f6;background:#fff;border-radius:20px;padding:12px 14px;min-height:66px;font-size:21px;font-weight:700;text-align:left;box-shadow:0 5px 0 #e8e5f6;transition:transform .08s}
+.opt:active{transform:translateY(3px);box-shadow:0 2px 0 #e8e5f6}
+.opt .ol{flex:none;width:36px;height:36px;border-radius:12px;background:#f0edff;color:var(--pur);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900}
+.opt .ot{flex:1;line-height:1.8}
+.opt.right{border-color:#22c55e;background:#ecfdf3;box-shadow:0 5px 0 #a7e9bf}
+.opt.right .ol{background:#22c55e;color:#fff}
+.opt.wrongc{border-color:#ffb067;background:#fff6ec;box-shadow:0 5px 0 #ffd9b3;animation:shake .4s}
+.opt.wrongc .ol{background:#ff9f43;color:#fff}
+.opt.dim{opacity:.55}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.fill{display:flex;gap:10px;margin-top:6px}
+.fill input{flex:1;min-width:0;font-size:26px;font-weight:800;border:3px solid #e8e5f6;border-radius:18px;padding:10px 14px;text-align:center;font-family:inherit;color:var(--ink);outline:none}
+.fill input:focus{border-color:var(--pur)}
+.fill input.bad{animation:shake .4s;border-color:#ff9f43}
+.hintb{margin-top:16px;background:#fffbe6;border:2px dashed #ffd666;border-radius:16px;padding:12px 14px;font-size:16px;line-height:1.8}
+.qbar{display:flex;gap:10px;margin-top:4px}
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:40;transform:translateY(110%);visibility:hidden;transition:transform .35s cubic-bezier(.2,1.2,.4,1),visibility 0s .35s}
+#sheet.show{transform:none;visibility:visible;transition:transform .35s cubic-bezier(.2,1.2,.4,1)}
+#sheet .in{max-width:520px;margin:0 auto;border-radius:28px 28px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));max-height:78vh;overflow:auto;box-shadow:0 -10px 30px rgba(0,0,0,.2)}
+#sheet .in.ok{background:#ecfdf3}
+#sheet .in.no{background:#fff7ee}
+.fbh{display:flex;align-items:center;gap:12px}
+.fbh .t{font-size:24px;font-weight:900}
+.ok .fbh .t{color:#15913f}.no .fbh .t{color:#e2672f}
+.steps{background:#fff;border-radius:16px;padding:10px 14px;margin:12px 0;font-size:17px;line-height:1.9}
+.steps ol{margin:4px 0;padding-left:22px}
+.steps li{margin:2px 0}
+.ansline{background:#fff;border-radius:14px;padding:8px 12px;margin-top:10px;font-size:18px;font-weight:700;line-height:1.9}
+.rad{display:inline-flex;align-items:stretch;vertical-align:middle;line-height:1.25;margin:0 1px}
+.rs{position:relative;width:.62em;flex:none}
+.rs svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
+.ri{border-top:.09em solid currentColor;padding:.08em .14em 0 .1em;display:inline-flex;align-items:center;white-space:nowrap}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;font-size:.86em;line-height:1.25;margin:0 2px}
+.fr>span{display:block;padding:0 3px;white-space:nowrap}
+.fr .fn{border-bottom:.1em solid currentColor}
+.ri .fr{font-size:.82em}
+.res{text-align:center}
+.bigstars{font-size:58px;margin:8px 0}
+.bigstars span{display:inline-block;animation:starin .6s both}
+.bigstars span:nth-child(2){animation-delay:.25s}.bigstars span:nth-child(3){animation-delay:.5s}
+@keyframes starin{0%{transform:scale(0) rotate(-90deg)}70%{transform:scale(1.3)}100%{transform:scale(1)}}
+.res .score{font-size:40px;font-weight:900;color:var(--pur)}
+.stack{display:grid;gap:12px;margin-top:16px}
+.bgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.bdg{background:#f8f7fd;border-radius:18px;padding:12px 6px;text-align:center}
+.bdg .e{font-size:36px}
+.bdg .n{font-weight:900;font-size:14px;margin-top:4px}
+.bdg .d{font-size:11px;color:var(--sub);margin-top:2px;line-height:1.4}
+.bdg.off .e{filter:grayscale(1);opacity:.35}
+.bdg.off{background:#f3f2f7}
+.bdg.on{background:linear-gradient(180deg,#fff7d6,#ffe9a8)}
+.stat{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.stat div{background:#f6f5fb;border-radius:16px;padding:12px;text-align:center}
+.stat b{display:block;font-size:24px;color:var(--pur)}
+.kp{margin:10px 0}
+.kp .row{font-size:15px;font-weight:700}
+.witem{border:2px solid #efedf8;border-radius:18px;padding:12px;margin:10px 0}
+.witem summary{list-style:none;cursor:pointer}
+.witem summary::-webkit-details-marker{display:none}
+.witem .wst{font-size:17px;line-height:1.8;font-weight:600}
+.sr{display:inline-flex;gap:3px;vertical-align:middle}
+.sr i{width:12px;height:12px;border-radius:50%;background:#e4e1f2;display:inline-block}
+.sr i.f{background:#22c55e}
+#modal{position:fixed;inset:0;background:rgba(30,20,70,.45);z-index:50;display:none;align-items:center;justify-content:center;padding:18px}
+#modal.show{display:flex}
+#modal .box{background:#fff;border-radius:26px;padding:22px;max-width:440px;width:100%;max-height:88vh;overflow:auto;animation:pop .35s}
+#toasts{position:fixed;top:12px;left:0;right:0;z-index:70;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
+.toast{background:#2d2a4a;color:#fff;border-radius:18px;padding:12px 18px;font-weight:800;font-size:16px;box-shadow:0 8px 20px rgba(0,0,0,.25);animation:tin .4s both;max-width:92vw;text-align:center}
+.toast.gold{background:linear-gradient(90deg,#ffb02e,#ff7a59)}
+@keyframes tin{from{transform:translateY(-30px);opacity:0}}
+.cf{position:fixed;top:-20px;width:10px;height:14px;border-radius:3px;z-index:65;pointer-events:none;animation:fall var(--t) cubic-bezier(.3,.6,.6,1) forwards}
+@keyframes fall{to{transform:translate(var(--dx),110vh) rotate(var(--rot))}}
+.xpf{position:fixed;left:50%;top:38%;z-index:66;font-size:34px;font-weight:900;color:#ffb02e;text-shadow:0 3px 0 #fff,0 0 12px rgba(255,255,255,.9);pointer-events:none;animation:xpup 1.2s ease-out forwards;white-space:nowrap}
+@keyframes xpup{0%{transform:translate(-50%,20px) scale(.5);opacity:0}25%{transform:translate(-50%,0) scale(1.2);opacity:1}100%{transform:translate(-50%,-80px) scale(1);opacity:0}}
+.switch{width:62px;height:36px;border-radius:20px;background:#ddd;border:none;position:relative;flex:none}
+.switch:after{content:"";position:absolute;top:4px;left:4px;width:28px;height:28px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 2px 4px rgba(0,0,0,.2)}
+.switch.on{background:var(--ok)}
+.switch.on:after{left:30px}
+.danger{color:#e5484d}
+.ptitle{color:#fff;font-size:24px;font-weight:900;margin:6px 4px 0;text-shadow:0 2px 0 rgba(0,0,0,.12)}
+.center{text-align:center}
+@media (min-width:700px){.stem{font-size:24px}}
+
+/* import & lesson */
+.impcard{background:linear-gradient(135deg,#fff 0%,#f0edff 100%);border:3px dashed #c4b5ff}
+.sheet-thumb{width:72px;height:72px;border-radius:14px;object-fit:cover;background:#eee;flex:none}
+.sheet-item{display:flex;gap:12px;align-items:flex-start;padding:12px;border:2px solid #efedf8;border-radius:18px;margin:10px 0;cursor:pointer;text-align:left;width:100%;background:#fff;font-family:inherit;color:inherit}
+.sheet-item:active{background:#f8f7fd}
+.prevw{width:100%;max-height:280px;object-fit:contain;border-radius:16px;background:#f3f2fa;display:block}
+.filebtn{position:relative;overflow:hidden}
+.filebtn input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:40px}
+.tgl{display:flex;align-items:center;gap:12px;padding:12px;border:3px solid #e8e5f6;border-radius:18px;margin:8px 0;background:#fff;cursor:pointer;font-weight:700;font-size:16px;text-align:left;width:100%;font-family:inherit;color:inherit;min-height:56px}
+.tgl.on{border-color:var(--pur);background:#f0edff}
+.tgl .ck{flex:none;width:28px;height:28px;border-radius:10px;border:3px solid #cfc9e8;display:flex;align-items:center;justify-content:center;font-size:16px;background:#fff}
+.tgl.on .ck{background:var(--pur);border-color:var(--pur);color:#fff}
+.note{width:100%;min-height:88px;border:3px solid #e8e5f6;border-radius:16px;padding:12px;font-size:16px;font-family:inherit;resize:vertical;color:var(--ink);outline:none}
+.note:focus{border-color:var(--pur)}
+.scan{text-align:center;padding:30px 10px}
+.scan .eye{font-size:48px;animation:bob 1s infinite}
+.scan .bar{height:10px;background:#f0eef8;border-radius:8px;overflow:hidden;margin:18px auto;max-width:220px}
+.scan .bar i{display:block;height:100%;width:30%;background:linear-gradient(90deg,#7c5cff,#4fc3ff);border-radius:8px;animation:scan 1.2s ease-in-out infinite}
+@keyframes scan{0%{transform:translateX(-20%)}100%{transform:translateX(280%)}}
+.lesson .formula{background:#f0edff;border-radius:16px;padding:14px;font-size:20px;font-weight:800;line-height:1.9;margin:10px 0;text-align:center}
+.lesson .kou{background:linear-gradient(135deg,#fff7d6,#ffe9a8);border-radius:16px;padding:12px 14px;font-size:17px;font-weight:800;margin:12px 0;line-height:1.6}
+.lesson .ex{background:#fff;border:2px solid #efedf8;border-radius:16px;padding:12px 14px;margin:10px 0}
+.lesson .ex .ttl{font-weight:900;color:var(--pur);margin-bottom:6px}
+.chklist{margin:0;padding:0;list-style:none}
+.chklist li{background:#f8f7fd;border-radius:14px;padding:10px 12px;margin:8px 0;font-weight:700;font-size:15px;line-height:1.6}
+.chklist li b{color:var(--pur)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<nav id="nav"><div class="in">
+ <button data-v="home" onclick="go('home')"><b>🏠</b>首页</button>
+ <button data-v="map" onclick="go('map')"><b>🗺️</b>闯关地图</button>
+ <button data-v="wrong" onclick="go('wrong')"><b>📒</b>错题本</button>
+ <button data-v="badge" onclick="go('badge')"><b>🏆</b>成就</button>
+</div></nav>
+<div id="sheet"><div class="in"></div></div>
+<div id="modal"><div class="box"></div></div>
+<div id="toasts"></div>
+<script>
+"use strict";
+/* ================= 数学排版 ================= */
+const SQ='<span class="rs"><svg viewBox="0 0 10 20" preserveAspectRatio="none"><path d="M0.5 11.5 L2.6 10.4 L5.4 19 L9.6 0.5 L10.5 0.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg></span>';
+const R=x=>`<span class="rad">${SQ}<span class="ri">${x}</span></span>`;
+const F=(n,d)=>`<span class="fr"><span class="fn">${n}</span><span class="fd">${d}</span></span>`;
+const M='−';
+const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const gcd=(a,b)=>{a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b];}return a;};
+function simp(n){let s=1,r=n;for(let k=2;k*k<=r;k++){while(r%(k*k)===0){r/=k*k;s*=k;}}return [s,r];}
+const isSq=n=>Number.isInteger(Math.sqrt(n));
+const num=n=>n<0?M+(-n):String(n);
+const dec=x=>String(parseFloat(x.toFixed(6)));
+function frac(n,d){if(d<0){n=-n;d=-d;}const g=gcd(n,d)||1;n/=g;d/=g;const s=n<0?M:'';n=Math.abs(n);return s+(d===1?String(n):F(n,d));}
+/* 值为 n·√r / d 的最简形式 */
+function rad(n,d,r){const t=simp(r);const s=t[0],rr=t[1];n*=s;
+ if(rr===1)return {h:frac(n,d),v:n/d};
+ if(d<0){n=-n;d=-d;}const g=gcd(n,d);n/=g;d/=g;
+ const sg=n<0?M:'';const an=Math.abs(n);const nu=(an===1?'':an)+R(rr);
+ return {h:sg+(d===1?nu:F(nu,d)),v:n*Math.sqrt(rr)/d};}
+const S_=h=>({h});
+const coef=k=>k===1?'':String(k);
+function lin(k,c,v){return coef(k)+v+(c>0?` + ${c}`:c<0?` ${M} ${-c}`:'');}
+function hash(s){let h=0;for(let i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))|0;}return (h>>>0).toString(36);}
+function MC(o){const opts=[o.ans];
+ for(const w of o.wrong){if(opts.length>=4)break;if(opts.some(p=>p.h===w.h))continue;
+  if(w.v!==undefined&&o.ans.v!==undefined&&Math.abs(w.v-o.ans.v)<1e-9)continue;opts.push(w);}
+ const sh=shuffle(opts);
+ return {type:'mc',id:'h'+hash(o.stem+o.ans.h),stem:o.stem,options:sh.map(p=>p.h),answer:sh.indexOf(o.ans),hint:o.hint,steps:o.steps,ev:o.ev,vals:sh.map(p=>p.v)};}
+function FILL(o){return {type:'fill',id:'h'+hash(o.stem),stem:o.stem,answer:o.answer,hint:o.hint,steps:o.steps,ev:o.ev};}
+
+/* ================= 题目生成器 ================= */
+const G={};
+/* 第1关 热身：开平方 */
+G[1]=[
+ function(){const n=rnd(2,20);return FILL({stem:`计算：${R(n*n)} = ？`,answer:n,ev:Math.sqrt(n*n),
+  hint:`想一想：哪个<b>正数</b>自己乘自己等于 ${n*n}？`,steps:[`${n} × ${n} = ${n*n}`,`所以 ${R(n*n)} = ${n}`]});},
+ function(){const k=pick([1,2,3,4,5,6,7,8,9,11,12,13,14,15]);const a=dec(k/10),b=dec(k*k/100);
+  return FILL({stem:`计算：${R(b)} = ？`,answer:k/10,ev:Math.sqrt(k*k/100),
+  hint:`试试先看整数：${R(k*k)} = ${k}，再想想小数点的位置。`,steps:[`${a} × ${a} = ${b}`,`所以 ${R(b)} = ${a}`]});},
+ function(){let p,q;do{q=rnd(2,9);p=rnd(1,q-1);}while(gcd(p,q)!==1);
+  return MC({stem:`计算：${R(F(p*p,q*q))} = ？`,ev:Math.sqrt(p*p/(q*q)),ans:{h:frac(p,q),v:p/q},
+  wrong:[{h:frac(q,p),v:q/p},{h:frac(p*p,q),v:p*p/q},{h:frac(p,q*q),v:p/(q*q)},{h:frac(p,2*q),v:p/(2*q)},{h:frac(p+1,q),v:(p+1)/q}],
+  hint:`分子、分母分别开平方：${R(p*p)} 和 ${R(q*q)}。`,steps:[`${R(F(p*p,q*q))} = ${F(R(p*p),R(q*q))}`,`= ${frac(p,q)}`]});},
+ function(){const n=rnd(2,12);return MC({stem:`${n*n} 的<b>算术平方根</b>是？`,ans:{h:String(n),v:n},
+  wrong:[S_('±'+n),{h:M+n,v:-n},{h:String(n*n),v:n*n}],ev:Math.sqrt(n*n),hint:`算术平方根是那个<b>不是负数</b>的平方根哦。`,
+  steps:[`${n*n} 的平方根是 ±${n}`,`其中非负的 ${n} 叫算术平方根，即 ${R(n*n)} = ${n}`]});},
+ function(){const n=pick([2,3,5,6,7,8,10,11,12,13,15]);return FILL({stem:`计算：(${R(n)})² = ？`,answer:n,ev:Math.pow(Math.sqrt(n),2),
+  hint:`先开方再平方，正好"抵消"。`,steps:[`(${R('a')})² = a（a ≥ 0）`,`所以 (${R(n)})² = ${n}`]});}
+];
+/* 第2关 有意义的条件 */
+G[2]=[
+ function(){const a=rnd(1,9);return MC({stem:`要使 ${R('x '+M+' '+a)} 有意义，x 的取值范围是？`,ans:S_(`x ≥ ${a}`),
+  wrong:[S_(`x &gt; ${a}`),S_(`x ≤ ${a}`),S_(`x ≥ ${M}${a}`)],hint:`根号里面的数（被开方数）要 <b>≥ 0</b>。`,
+  steps:[`被开方数 ≥ 0：x ${M} ${a} ≥ 0`,`移项得 x ≥ ${a}`]});},
+ function(){const b=rnd(1,9);return MC({stem:`要使 ${R(b+' '+M+' x')} 有意义，x 的取值范围是？`,ans:S_(`x ≤ ${b}`),
+  wrong:[S_(`x ≥ ${b}`),S_(`x &lt; ${b}`),S_(`x ≤ ${M}${b}`)],hint:`被开方数 ${b} ${M} x 要 ≥ 0。`,
+  steps:[`${b} ${M} x ≥ 0`,`移项得 ${b} ≥ x`,`即 x ≤ ${b}`]});},
+ function(){const k=rnd(2,5),r=rnd(1,6);return MC({stem:`要使 ${R(`${k}x ${M} ${k*r}`)} 有意义，x 的取值范围是？`,ans:S_(`x ≥ ${r}`),
+  wrong:[S_(`x ≥ ${k*r}`),S_(`x ≤ ${r}`),S_(`x &gt; ${r}`)],hint:`列不等式 ${k}x ${M} ${k*r} ≥ 0，再两边除以 ${k}。`,
+  steps:[`${k}x ${M} ${k*r} ≥ 0`,`${k}x ≥ ${k*r}`,`x ≥ ${r}`]});},
+ function(){const a=rnd(1,3),b=a+rnd(1,3);return MC({stem:`要使式子 ${F(R(a+' '+M+' x'),b+' '+M+' |x|')} 有意义，x 的取值范围是？`,
+  ans:S_(`x ≤ ${a} 且 x ≠ ${M}${b}`),wrong:[S_(`x ≤ ${a}`),S_(`x ≥ ${a} 且 x ≠ ${b}`),S_(`x &lt; ${a} 且 x ≠ ${M}${b}`)],
+  hint:`两个条件：① 根号里 ≥ 0；② <b>分母不能为 0</b>。`,
+  steps:[`根号里：${a} ${M} x ≥ 0，得 x ≤ ${a}`,`分母：${b} ${M} |x| ≠ 0，得 x ≠ ±${b}`,`因为 x ≤ ${a} &lt; ${b}，x = ${b} 本来就不可能，只需 x ≠ ${M}${b}`,`所以 x ≤ ${a} 且 x ≠ ${M}${b}`]});},
+ function(){const a=rnd(1,9);return MC({stem:`要使 ${F(1,R('x '+M+' '+a))} 有意义，x 的取值范围是？`,ans:S_(`x &gt; ${a}`),
+  wrong:[S_(`x ≥ ${a}`),S_(`x &lt; ${a}`),S_(`x ≠ ${a}`)],hint:`根号在分母上：既要 ≥ 0，又不能等于 0。`,
+  steps:[`被开方数 ≥ 0 且分母 ≠ 0`,`所以 x ${M} ${a} &gt; 0`,`x &gt; ${a}`]});},
+ function(){const a=rnd(1,9);return FILL({stem:`若 ${R('x '+M+' '+a)} + ${R(a+' '+M+' x')} 有意义，则 x = ？`,answer:a,
+  hint:`两个根号都要有意义：x ${M} ${a} ≥ 0 并且 ${a} ${M} x ≥ 0。`,steps:[`x ${M} ${a} ≥ 0 ⇒ x ≥ ${a}`,`${a} ${M} x ≥ 0 ⇒ x ≤ ${a}`,`同时满足只能 x = ${a}`]});}
+];
+/* 第3关 √(a²)=|a| */
+G[3]=[
+ function(){const n=rnd(2,12);return FILL({stem:`计算：${R(`(${M}${n})²`)} = ？`,answer:n,ev:Math.sqrt(n*n),
+  hint:`${R('a²')} = |a|，结果一定不是负数。`,steps:[`(${M}${n})² = ${n*n}`,`${R(n*n)} = ${n}（也可以用 ${R('a²')} = |a| = |${M}${n}| = ${n}）`]});},
+ function(){const a=rnd(1,9);const lt=Math.random()<.6;
+  const ans=lt?`${a} ${M} x`:`x ${M} ${a}`,oth=lt?`x ${M} ${a}`:`${a} ${M} x`;
+  return MC({stem:`若 x ${lt?'&lt;':'&gt;'} ${a}，化简 ${R(`(x ${M} ${a})²`)} = ？`,ans:S_(ans),
+  wrong:[S_(oth),S_(`±(x ${M} ${a})`),S_(`x + ${a}`)],hint:`先写成 |x ${M} ${a}|，再看 x ${M} ${a} 是正还是负。`,
+  steps:[`${R(`(x ${M} ${a})²`)} = |x ${M} ${a}|`,`因为 x ${lt?'&lt;':'&gt;'} ${a}，所以 x ${M} ${a} ${lt?'&lt;':'&gt;'} 0`,`|x ${M} ${a}| = ${ans}`]});},
+ function(){if(Math.random()<.5){return MC({stem:`已知 b &lt; 0，化简 ${R('a³b')} = ？`,ans:S_(`${M}a${R('ab')}`),
+   wrong:[S_(`a${R('ab')}`),S_(`${M}a${R(M+'ab')}`),S_(`a${R(M+'ab')}`)],hint:`a³b ≥ 0 且 b &lt; 0，那 a 是正还是负？`,
+   steps:[`被开方数 a³b ≥ 0，又 b &lt; 0，所以 a ≤ 0`,`a³b = a² · ab`,`${R('a² · ab')} = |a|${R('ab')}`,`a ≤ 0，|a| = ${M}a，所以结果是 ${M}a${R('ab')}`]});}
+  return MC({stem:`已知 a &lt; 0，化简 ${R('ab³')} = ？`,ans:S_(`${M}b${R('ab')}`),
+   wrong:[S_(`b${R('ab')}`),S_(`${M}b${R(M+'ab')}`),S_(`b${R(M+'ab')}`)],hint:`ab³ ≥ 0 且 a &lt; 0，那 b 是正还是负？`,
+   steps:[`被开方数 ab³ ≥ 0，又 a &lt; 0，所以 b ≤ 0`,`ab³ = b² · ab`,`${R('b² · ab')} = |b|${R('ab')}`,`b ≤ 0，|b| = ${M}b，所以结果是 ${M}b${R('ab')}`]});},
+ function(){const k=rnd(1,5);const kx=(k===1?'':k)+'x';
+  return MC({stem:`已知 x &lt; 0，化简 x${R(F(M+k,'x'))} = ？`,ans:S_(`${M}${R(M+kx)}`),
+  wrong:[S_(R(M+kx)),S_(`${M}${R(kx)}`),S_(R(kx))],hint:`x 是负数！把 x 移进根号前，先把负号留在外面：x = ${M}${R('x²')}。`,
+  steps:[`因为 x &lt; 0，所以 x = ${M}|x| = ${M}${R('x²')}`,`x${R(F(M+k,'x'))} = ${M}${R(`x² · ${F(M+k,'x')}`)}`,`= ${M}${R(M+kx)}`]});},
+ function(){if(Math.random()<.5){return MC({stem:`若 a &lt; 0，则 ${R('a²')} + |a| = ？`,ans:S_(`${M}2a`),
+   wrong:[S_('0'),S_('2a'),S_('a²')],hint:`a &lt; 0 时，${R('a²')} = |a| = ${M}a。`,steps:[`${R('a²')} = |a| = ${M}a`,`|a| = ${M}a`,`和为 ${M}a + (${M}a) = ${M}2a`]});}
+  const m=rnd(2,5);return MC({stem:`若 a &lt; 0，化简 ${R(m*m+'a²')} = ？`,ans:S_(`${M}${m}a`),
+   wrong:[S_(`${m}a`),S_(`±${m}a`),S_(`${m*m}a`)],hint:`${R(m*m+'a²')} = |${m}a|，a 是负数哦。`,
+   steps:[`${R(m*m+'a²')} = ${R(`(${m}a)²`)} = |${m}a|`,`a &lt; 0，所以 ${m}a &lt; 0`,`|${m}a| = ${M}${m}a`]});}
+];
+/* 第4关 化简 */
+G[4]=[
+ function(){const s=rnd(2,5),r=pick([2,3,5,6,7]),N=s*s*r;return MC({stem:`化简：${R(N)} = ？`,ev:Math.sqrt(N),ans:rad(1,1,N),
+  wrong:[{h:r+R(s),v:r*Math.sqrt(s)},{h:s+R(r*s),v:s*Math.sqrt(r*s)},rad(2*s,1,r),rad(s*s,1,r),rad(1,1,r)],
+  hint:`把 ${N} 拆成"平方数 × 另一个数"：${N} = ${s*s} × ?`,steps:[`${N} = ${s*s} × ${r}`,`${R(N)} = ${R(s*s)} × ${R(r)} = ${s}${R(r)}`]});},
+ function(){const m=pick([2,3,5,6,7,8,12]);const d=dec(m/10);const A=rad(1,10,10*m);
+  return MC({stem:`化简：${R(d)} = ？`,ev:Math.sqrt(m/10),ans:A,wrong:[rad(1,10,m),rad(1,5,10*m),rad(1,1,10*m),rad(1,100,10*m),rad(m,10,10)],
+  hint:`先把小数化成分数，再让分母变成平方数。`,steps:[`${d} = ${F(m,10)} = ${F(10*m,100)}`,`${R(F(10*m,100))} = ${F(R(10*m),10)}`,`化简得 ${A.h}`]});},
+ function(){const q=pick([2,3]),t=rnd(1,3),s=rnd(2,4),r=pick([2,3,5]);const m=q*t,N=s*s*r;const A=rad(t*s,1,r);
+  return MC({stem:`化简：${m}${R(F(N,q*q))} = ？`,ev:m*Math.sqrt(N/(q*q)),ans:A,
+  wrong:[rad(m*s,1,r),rad(t*s,q,r),rad(t,1,N),rad(t*s,1,r*q),rad(m,q,N)],hint:`分母 ${q*q} 是平方数，可以直接开出来：${R(F(N,q*q))} = ${F(R(N),q)}。`,
+  steps:[`${R(F(N,q*q))} = ${F(R(N),q)} = ${F(s+R(r),q)}`,`${m} × ${F(s+R(r),q)} = ${A.h}`]});},
+ function(){const k=rnd(1,4);const c=coef(k);return MC({stem:`已知 a &gt; 0，化简 ${c}${R(F(1,'a³'))} = ？`,ans:S_(F(c+R('a'),'a²')),
+  wrong:[S_(F(c+R('a'),'a')),S_(F(R(k+'a'),'a²')),S_(F(c+R('a'),'a³')),S_(`${c}a${R('a')}`)],hint:`让分母变成平方式：${F(1,'a³')} = ${F('a','a⁴')}。`,
+  steps:[`${F(1,'a³')} = ${F('a','a³ · a')} = ${F('a','a⁴')}`,`${R(F('a','a⁴'))} = ${F(R('a'),'a²')}`,`所以结果为 ${F(c+R('a'),'a²')}`]});},
+ function(){return MC({stem:`已知 a &gt; 0，化简 ${R(F(8,'27a'))} = ？`,ans:S_(F('2'+R('6a'),'9a')),
+  wrong:[S_(F('2'+R('6a'),'3a')),S_(F(R('6a'),'9a')),S_(F('2'+R('2a'),'9a')),S_(F('2'+R('6a'),'27a'))],
+  hint:`分子分母同乘 3a，让分母变成 81a²（是平方式）。`,steps:[`${F(8,'27a')} = ${F('8 × 3a','27a × 3a')} = ${F('24a','81a²')}`,`${R(F('24a','81a²'))} = ${F(R('24a'),'9a')}`,`${R('24a')} = ${R('4 × 6a')} = 2${R('6a')}，结果 ${F('2'+R('6a'),'9a')}`]});},
+ function(){let p,r;do{r=pick([2,3,5,6,7]);p=rnd(1,r-1);}while(gcd(p,r)!==1||isSq(p*r));const A=rad(1,r,p*r);
+  return MC({stem:`化简：${R(F(p,r))} = ？`,ev:Math.sqrt(p/r),ans:A,wrong:[rad(1,r,p),rad(1,p,r),rad(1,1,p*r),rad(r,1,p),rad(p,1,r)],
+  hint:`分母里不能有根号！分子分母同乘 ${r}，让分母变成 ${r*r}。`,steps:[`${F(p,r)} = ${F(p*r,r*r)}`,`${R(F(p*r,r*r))} = ${F(R(p*r),r)}`,`= ${A.h}`]});}
+];
+/* 第5关 最简二次根式 */
+function poolSimple(){return pick([
+ ()=>({h:R(pick([2,3,5,6,7,10,11,13,14,15]))}),()=>({h:R('a² + b²')}),()=>({h:R('x + 1')}),()=>({h:R(pick([2,3,5,6,7])+'a')})])();}
+function poolNon(){return pick([
+ ()=>{const s=rnd(2,4),r=pick([2,3,5]),N=s*s*r;return {h:R(N),why:`${R(N)} = ${s}${R(r)}，含能开得尽方的因数 ${s*s}`};},
+ ()=>{const r=pick([2,3,5,7]);return {h:R(F(1,r)),why:`${R(F(1,r))} 的被开方数含分母`};},
+ ()=>{const m=pick(['0.5','0.2','1.5']);return {h:R(m),why:`${R(m)} 的被开方数是小数（相当于含分母）`};},
+ ()=>({h:R('a²b'),why:`${R('a²b')} 含能开得尽方的因式 a²`}),
+ ()=>{const k=pick([4,9]);return {h:R(k+'a'),why:`${R(k+'a')} 含能开得尽方的因数 ${k}`};},
+ ()=>({h:R(F('x',2)),why:`${R(F('x',2))} 的被开方数含分母`}),
+ ()=>({h:R('a³'),why:`${R('a³')} = a${R('a')}，含因式 a²`})])();}
+function uniq(gen,n){const out=[];let g=0;while(out.length<n&&g++<300){const x=gen();if(!out.some(y=>y.h===x.h))out.push(x);}return out;}
+const RULE=`最简二次根式要同时满足：① 被开方数不含分母（也不能是小数）；② 不含能开得尽方的因数或因式。`;
+G[5]=[
+ function(){const a=poolSimple(),w=uniq(poolNon,3);return MC({stem:`下列二次根式中，是<b>最简二次根式</b>的是？`,ans:a,wrong:w,
+  hint:RULE,steps:[...w.map(x=>x.why+'，不是最简'),`${a.h} 满足两个条件，是最简二次根式 ✓`]});},
+ function(){const a=poolNon(),w=uniq(poolSimple,3);return MC({stem:`下列二次根式中，<b>不是</b>最简二次根式的是？`,ans:a,wrong:w,
+  hint:RULE,steps:[`${a.why}，所以它不是最简二次根式`,`其余选项都满足两个条件 ✓`]});},
+ function(){const s=rnd(2,6),r=pick([2,3,5,6,7]),N=s*s*r;return FILL({stem:`把 ${R(N)} 化成最简二次根式 a${R(r)}，则 a = ？`,answer:s,ev:Math.sqrt(N)/Math.sqrt(r),
+  hint:`找出 ${N} 里最大的平方因数。`,steps:[`${N} = ${s*s} × ${r}`,`${R(N)} = ${s}${R(r)}`,`所以 a = ${s}`]});},
+ function(){const a=poolSimple(),w=uniq(poolNon,3);return MC({stem:`小根想挑一个已经"最简"、不用再化简的根式，应该选？`,ans:a,wrong:w,
+  hint:RULE,steps:[...w.map(x=>x.why),`只有 ${a.h} 已经是最简二次根式 ✓`]});}
+];
+/* 第6关 同类二次根式 */
+G[6]=[
+ function(){const r=pick([2,3,5,6,7]);let th,ts,tv;
+  if(Math.random()<.5){const s=rnd(1,3),N=s*s*r;th=R(F(1,N));const o=rad(1,s*r,r);ts=o.h;tv=Math.sqrt(1/N)-o.v;}else{const s=rnd(2,3);th=R(s*s*r);const o=rad(s,1,r);ts=o.h;tv=Math.sqrt(s*s*r)-o.v;}
+  let t;do{t=rnd(1,4);}while(R(t*t*r)===th);
+  const ans={h:R(t*t*r),sh:rad(t,1,r).h,cls:r};
+  const others=shuffle([2,3,5,6,7].filter(x=>x!==r)).slice(0,3).map(rr=>{const u=rnd(1,3);return {h:R(u*u*rr),sh:rad(u,1,rr).h,cls:rr};});
+  const q=MC({stem:`下列二次根式中，与 ${th} 是<b>同类二次根式</b>的是？`,ans,wrong:others,hint:`先把每个根式都化成最简，再比较根号里面的数。`,
+  steps:[`${th} = ${ts}`,...[ans,...others].map(o=>`${o.h} = ${o.sh}`),`被开方数相同的是 ${ans.h} ✓`]});q.chk={tv,cls:r,others:others.map(o=>o.cls)};return q;},
+ function(){const k1=rnd(1,3),k2=k1+rnd(1,2),a0=rnd(1,6),V=pick([2,3,5,6,7,10,11]);const c1=V-k1*a0,c2=V-k2*a0;
+  const e1=lin(k1,c1,'a'),e2=lin(k2,c2,'a');
+  const q=FILL({stem:`若最简二次根式 ${R(e1)} 与 ${R(e2)} 是同类二次根式，则 a = ？`,answer:a0,
+  hint:`两个<b>最简</b>二次根式是同类 ⇔ 被开方数<b>相等</b>。`,steps:[`列方程：${e1} = ${e2}`,`解得 a = ${a0}`,`检验：此时两个被开方数都等于 ${V}，是最简二次根式 ✓`]});q.chk={k1,c1,k2,c2,V};return q;},
+ function(){const r=pick([2,3,5,6,7]);let s1=rnd(1,4),s2;do{s2=rnd(1,4);}while(s2===s1);
+  const pr=(x,y)=>`${R(x)} 与 ${R(y)}`;
+  const ans={h:pr(s1*s1*r,s2*s2*r)};const st=[`${R(s1*s1*r)} = ${rad(s1,1,r).h}，${R(s2*s2*r)} = ${rad(s2,1,r).h}，被开方数都是 ${r} ✓`];
+  const ws=[];const pool=shuffle([2,3,5,6,7]);const pairs=[];
+  for(let i=0;i<3;i++){const r1=pool[i],r2=pool[(i+1)%5];const u=rnd(1,3),v=rnd(1,3);pairs.push([r1,r2]);ws.push({h:pr(u*u*r1,v*v*r2)});st.push(`${R(u*u*r1)} = ${rad(u,1,r1).h}，${R(v*v*r2)} = ${rad(v,1,r2).h}，不是同类`);}
+  const q=MC({stem:`下列各组二次根式中，是<b>同类二次根式</b>的一组是？`,ans,wrong:ws,hint:`化成最简后，被开方数相同的才是同类。`,steps:st});q.chk={pairs};return q;}
+];
+/* 第7关 加减 */
+function c7(){return pick([
+ ()=>{const a=rnd(1,5),b=rnd(1,5),r=pick([2,3,5,6,7]);return {h:`${coef(a)}${R(r)} + ${coef(b)}${R(r)} = ${a+b}${R(r)}`,why:`同类二次根式系数相加：${a} + ${b} = ${a+b} ✓`,L:(a+b)*Math.sqrt(r),Rv:(a+b)*Math.sqrt(r)};},
+ ()=>{const r=pick([2,3,5,6]);return {h:`${R(r)} + ${F(1,2)}${R(r)} = ${F(3,2)}${R(r)}`,why:`1 + ${F(1,2)} = ${F(3,2)}，所以等于 ${F(3,2)}${R(r)} ✓`,L:Math.sqrt(r)*1.5,Rv:1.5*Math.sqrt(r)};},
+ ()=>{const b=rnd(1,4),a=b+rnd(2,4),r=pick([2,3,5,7]);return {h:`${a}${R(r)} ${M} ${coef(b)}${R(r)} = ${a-b}${R(r)}`,why:`系数相减：${a} ${M} ${b} = ${a-b} ✓`,L:a*Math.sqrt(r)-b*Math.sqrt(r),Rv:(a-b)*Math.sqrt(r)};}])();}
+function w7(){return [
+ ()=>{const p=pick([2,3,5]),q=pick([6,7,10,11]);return {h:`${R(p)} + ${R(q)} = ${R(p+q)}`,why:`${R(p)} 和 ${R(q)} 不是同类二次根式，不能合并`,L:Math.sqrt(p)+Math.sqrt(q),Rv:Math.sqrt(p+q)};},
+ ()=>{const m=rnd(2,5),n=rnd(2,4),r=pick([2,3,5]);return {h:`${m} + ${n}${R(r)} = ${m+n}${R(r)}`,why:`${m} 是有理数，${n}${R(r)} 是根式，不能合并`,L:m+n*Math.sqrt(r),Rv:(m+n)*Math.sqrt(r)};},
+ ()=>{const b=rnd(1,3),a=b+rnd(1,3),r=pick([2,3,5,7]);return {h:`${a}${R(r)} ${M} ${coef(b)}${R(r)} = ${a-b}`,why:`应得 ${rad(a-b,1,r).h}，根号部分不能丢`,L:(a-b)*Math.sqrt(r),Rv:a-b};},
+ ()=>{const s=rnd(2,3),r=pick([2,3,5]);return {h:`${R(s*s*r)} = ${s*s}${R(r)}`,why:`${R(s*s*r)} = ${s}${R(r)}，开出来的是 ${s} 不是 ${s*s}`,L:Math.sqrt(s*s*r),Rv:s*s*Math.sqrt(r)};}];}
+G[7]=[
+ function(){const a=c7();const ws=shuffle(w7()).slice(0,3).map(f=>f());const q=MC({stem:`下列计算<b>正确</b>的是？`,ans:a,wrong:ws,
+  hint:`只有<b>同类</b>二次根式才能合并，合并时系数相加、根号部分不变。`,steps:[...ws.map(w=>w.why+'，错误'),a.why]});q.chk={a,ws};return q;},
+ function(){const r=pick([2,3,5,6]);let s1=rnd(1,4),s2;do{s2=rnd(1,4);}while(s2===s1);const plus=Math.random()<.5;
+  if(!plus&&s1<s2){const t=s1;s1=s2;s2=t;}const k=plus?s1+s2:s1-s2;const A=rad(k,1,r);const op=plus?'+':M;
+  return MC({stem:`计算：${R(s1*s1*r)} ${op} ${R(s2*s2*r)} = ？`,ev:plus?Math.sqrt(s1*s1*r)+Math.sqrt(s2*s2*r):Math.sqrt(s1*s1*r)-Math.sqrt(s2*s2*r),ans:A,
+  wrong:[rad(1,1,plus?(s1*s1+s2*s2)*r:(s1*s1-s2*s2)*r),rad(s1*s2,1,r),rad(k+1,1,r),rad(k,1,2*r),rad(k,1,r*r+1)],hint:`先把两个根式分别化简，再合并。`,
+  steps:[`${R(s1*s1*r)} = ${rad(s1,1,r).h}，${R(s2*s2*r)} = ${rad(s2,1,r).h}`,`${rad(s1,1,r).h} ${op} ${rad(s2,1,r).h} = (${s1} ${op} ${s2})${R(r)} = ${A.h}`]});},
+ function(){const r=pick([2,3,5,7]);const a=rnd(2,6),b=rnd(1,5),c=rnd(1,a+b-1);
+  return FILL({stem:`${a}${R(r)} + ${coef(b)}${R(r)} ${M} ${coef(c)}${R(r)} = k${R(r)}，则 k = ？`,answer:a+b-c,ev:(a*Math.sqrt(r)+b*Math.sqrt(r)-c*Math.sqrt(r))/Math.sqrt(r),
+  hint:`把 ${R(r)} 当成一个"字母"，像合并同类项一样算系数。`,steps:[`系数：${a} + ${b} ${M} ${c} = ${a+b-c}`,`所以 k = ${a+b-c}`]});},
+ function(){const q=rnd(2,4),r=pick([2,3,5,6]);const A=rad(q+1,q,r);
+  return MC({stem:`计算：${R(r)} + ${F(1,q)}${R(r)} = ？`,ev:Math.sqrt(r)*(1+1/q),ans:A,wrong:[rad(2,q,r),rad(1,q+1,r),rad(2,1,r),rad(1,1,r+q)],
+  hint:`${R(r)} 前面的系数是 1。`,steps:[`(1 + ${F(1,q)})${R(r)}`,`= ${F(q+1,q)}${R(r)}`]});}
+];
+/* 第8关 乘除、分母有理化、解方程 */
+G[8]=[
+ function(){const r=pick([2,3,5,6,7]);const k=pick([1,2,3,r,2*r,rnd(1,6)]);const A=rad(k,r,r);
+  return MC({stem:`分母有理化：${F(k,R(r))} = ？`,ev:k/Math.sqrt(r),ans:A,wrong:[rad(k,1,r),{h:frac(k,r),v:k/r},rad(1,k,r),rad(k,r*r,r),rad(r,k,r)],
+  hint:`分子和分母同时乘 ${R(r)}，因为 ${R(r)} × ${R(r)} = ${r}。`,steps:[`${F(k,R(r))} = ${F(k+' × '+R(r),R(r)+' × '+R(r))} = ${F(coef(k)+R(r),r)}`,`= ${A.h}`]});},
+ function(){if(Math.random()<.5){let a,b;do{a=pick([2,3,5,6,7]);b=pick([2,3,6,8,10,12]);}while(a===b||isSq(a*b));const A=rad(1,1,a*b);
+   return MC({stem:`计算：${R(a)} × ${R(b)} = ？`,ev:Math.sqrt(a)*Math.sqrt(b),ans:A,wrong:[rad(1,1,a+b),{h:String(a*b),v:a*b},rad(a,1,b),rad(2,1,a*b)],
+   hint:`${R('a')} · ${R('b')} = ${R('ab')}，算完记得化简。`,steps:[`${R(a)} × ${R(b)} = ${R(a*b)}`,`化简：${R(a*b)} = ${A.h}`]});}
+  let a,b;do{a=pick([2,3,5,6]);b=pick([2,3,6,8,12]);}while(a===b);const A=rad(1,1,b);
+  return MC({stem:`计算：${R(a*b)} ÷ ${R(a)} = ？`,ev:Math.sqrt(a*b)/Math.sqrt(a),ans:A,wrong:[rad(1,1,a*b-a),{h:String(b),v:b},rad(1,1,a),rad(a,1,b)],
+  hint:`${R('a')} ÷ ${R('b')} = ${R(F('a','b'))}。`,steps:[`${R(a*b)} ÷ ${R(a)} = ${R(a*b+' ÷ '+a)} = ${R(b)}`,`化简：${A.h}`]});},
+ function(){const r=pick([2,3,5,6,7]);const plus=Math.random()<.6;const op=plus?'+':M;const x2=plus?`${M}${R(r)}`:R(r),x2w=plus?R(r):`${M}${R(r)}`;
+  const q=MC({stem:`解方程：x² ${op} ${R(r)}x = 0`,ans:S_(`x₁ = 0，x₂ = ${x2}`),wrong:[S_(`x = ${x2}`),S_(`x₁ = 0，x₂ = ${x2w}`),S_(`x₁ = ${R(r)}，x₂ = ${M}${R(r)}`)],
+  hint:`提公因式 x，变成两个因式相乘等于 0。别把 x = 0 弄丢了！`,steps:[`提公因式：x(x ${op} ${R(r)}) = 0`,`x = 0 或 x ${op} ${R(r)} = 0`,`所以 x₁ = 0，x₂ = ${x2}`]});
+  q.chk={r,plus};return q;},
+ function(){const k=rnd(2,5),m=rnd(2,5),h=rnd(1,4);const rhs=k*m*m;
+  const st=[`两边同除以 ${k}：(x ${M} ${h})² = ${m*m}`,`开平方：x ${M} ${h} = ±${m}`,`x₁ = ${h} + ${m} = ${h+m}，x₂ = ${h} ${M} ${m} = ${num(h-m)}`];
+  let q;
+  if(Math.random()<.5)q=FILL({stem:`解方程 ${k}(x ${M} ${h})² = ${rhs}，它<b>较大</b>的根 x = ？`,answer:h+m,hint:`先两边除以 ${k}，再开平方，记得有 ± 两种情况。`,steps:st});
+  else q=MC({stem:`解方程：${k}(x ${M} ${h})² = ${rhs}`,ans:S_(`x₁ = ${h+m}，x₂ = ${num(h-m)}`),wrong:[S_(`x = ${h+m}`),S_(`x₁ = ${num(m-h)}，x₂ = ${num(-m-h)}`),S_(`x₁ = ${h+m*m}，x₂ = ${num(h-m*m)}`)],
+  hint:`先两边除以 ${k}，再开平方，记得有 ± 两种情况。`,steps:st});
+  q.chk={k,h,rhs,roots:[h+m,h-m]};return q;},
+ function(){if(Math.random()<.4){return MC({stem:`解不等式：2${R(3)}x + 2${R(6)} &gt; 3${R(2)}x`,ans:S_(`x &lt; 2${R(2)} + 2${R(3)}`),
+   wrong:[S_(`x &gt; 2${R(2)} + 2${R(3)}`),S_(`x &lt; ${M}2${R(2)} ${M} 2${R(3)}`),S_(`x &gt; ${M}2${R(2)} ${M} 2${R(3)}`)],
+   hint:`移项后看 x 的系数 2${R(3)} ${M} 3${R(2)} 是正还是负——除以负数要<b>变号</b>！`,
+   steps:[`移项：(2${R(3)} ${M} 3${R(2)})x &gt; ${M}2${R(6)}`,`2${R(3)} = ${R(12)} &lt; ${R(18)} = 3${R(2)}，所以系数是负数`,`两边除以负数，不等号变向：x &lt; ${F(`${M}2${R(6)}`,`2${R(3)} ${M} 3${R(2)}`)} = ${F(`2${R(6)}`,`3${R(2)} ${M} 2${R(3)}`)}`,
+   `分母有理化（乘 3${R(2)} + 2${R(3)}）：${F(`2${R(6)}(3${R(2)} + 2${R(3)})`,'18 '+M+' 12')} = ${F(`12${R(3)} + 12${R(2)}`,6)}`,`所以 x &lt; 2${R(2)} + 2${R(3)}`]});}
+  let p,q;do{p=pick([2,3,5]);q=pick([2,3,5,6,7]);}while(p===q);
+  return MC({stem:`解不等式：${R(p)}x &gt; ${R(p*q)}`,ans:S_(`x &gt; ${R(q)}`),wrong:[S_(`x &lt; ${R(q)}`),S_(`x &gt; ${q}`),S_(`x &gt; ${R(p*q)}`)],
+  hint:`两边同时除以正数 ${R(p)}，不等号方向不变。`,steps:[`${R(p)} &gt; 0，两边同除以 ${R(p)}`,`x &gt; ${F(R(p*q),R(p))} = ${R(F(p*q,p))} = ${R(q)}`]});},
+ function(){if(Math.random()<.5){return MC({stem:`已知 x &gt; 0，y &gt; 0，计算：${F(1,R('xy'))} ÷ ${F(1,R('x'))} = ？`,ans:S_(F(R('y'),'y')),
+   wrong:[S_(R('y')),S_(F(R('x'),'x')),S_('y'+R('y'))],hint:`除以一个数等于乘它的倒数。`,
+   steps:[`${F(1,R('xy'))} ÷ ${F(1,R('x'))} = ${F(1,R('xy'))} × ${R('x')} = ${F(R('x'),R('xy'))}`,`= ${F(1,R('y'))}`,`分母有理化：${F(1,R('y'))} = ${F(R('y'),'y')}`]});}
+  return MC({stem:`已知 x &gt; 0，y &gt; 0，计算：${R(F('x','y'))} ÷ ${R(F(1,'xy'))} = ？`,ans:S_('x'),wrong:[S_('x²'),S_('y'),S_(F('x','y'))],
+   hint:`${R('a')} ÷ ${R('b')} = ${R(F('a','b'))}，先把根号里的算出来。`,steps:[`${R(F('x','y'))} ÷ ${R(F(1,'xy'))} = ${R(F('x','y')+' × xy')}`,`= ${R('x²')}`,`x &gt; 0，所以结果为 x`]});}
+];
+/* ================= 关卡信息 ================= */
+const LV=[
+ {name:'热身：开平方',short:'热身开方',icon:'🌱',tip:`${R(9)} = 3，因为 3² = 9。算术平方根一定是<b>非负数</b>。小数、分数也一样：${R('0.25')} = 0.5，${R(F(1,4))} = ${F(1,2)}。`},
+ {name:'根式有意义的条件',short:'有意义条件',icon:'🔑',tip:`${R('a')} 有意义 ⇔ 被开方数 a <b>≥ 0</b>。如果式子有分母，还要<b>分母 ≠ 0</b>。`},
+ {name:'√(a²) = |a| 与正负号',short:'去根号看正负',icon:'⚖️',tip:`${R('a²')} = |a|：a ≥ 0 时等于 a；a &lt; 0 时等于 ${M}a。先判断正负，再去绝对值！`},
+ {name:'化简二次根式',short:'化简根式',icon:'✂️',tip:`把平方因数"搬"出来：${R(48)} = ${R('16 × 3')} = 4${R(3)}。分母里不留根号：${R(F(1,5))} = ${F(R(5),5)}。`},
+ {name:'最简二次根式',short:'最简根式',icon:'💎',tip:`最简二次根式：① 被开方数不含分母（也不是小数）；② 不含能开得尽方的因数或因式。`},
+ {name:'同类二次根式',short:'同类根式',icon:'👯',tip:`先化成最简，被开方数相同的就是同类：${R(12)} = 2${R(3)} 和 ${R(27)} = 3${R(3)} 是同类。`},
+ {name:'二次根式加减',short:'根式加减',icon:'➕',tip:`像合并同类项：只合并同类二次根式，系数相加、根号不变。注意 ${R(2)} + ${R(3)} ≠ ${R(5)}！`},
+ {name:'乘除与分母有理化',short:'乘除有理化',icon:'🚀',tip:`${R('a')} · ${R('b')} = ${R('ab')}（a、b ≥ 0）。分母有理化：分子分母同乘一个根式，让分母不含根号。解方程别忘了有两个根！`}
+];
+const BOSS={name:'本章 Boss：根号大魔王',short:'Boss 关',icon:'👹',tip:'综合八个知识点的 10 道题，答对 8 道就能击败 Boss！你已经练过所有招式了，加油！'};
+const TITLES=['根号萌新','根号学徒','开方小能手','化简达人','根式骑士','有理化勇者','去根号大师','根式王者','二次根式之神'];
+const BADGES=[
+ {id:'first',e:'🌱',n:'第一次打卡',d:'完成第一次每日打卡'},
+ {id:'s3',e:'🔥',n:'根号新手',d:'连续打卡 3 天'},
+ {id:'s7',e:'🧙',n:'去根号大师',d:'连续打卡 7 天'},
+ {id:'pass1',e:'🚩',n:'初次通关',d:'通过任意一关'},
+ {id:'star3',e:'⭐',n:'一关三星',d:'任意一关拿到 3 星'},
+ {id:'combo5',e:'⚡',n:'五连击',d:'一次练习中连续答对 5 题'},
+ {id:'clear',e:'🧹',n:'错题清零',d:'把错题本里的题全部掌握'},
+ {id:'all',e:'🗺️',n:'全部通关',d:'通过全部 8 个关卡'},
+ {id:'boss',e:'👑',n:'本章Boss击败',d:'击败二次根式大魔王'},
+ {id:'xp500',e:'💎',n:'经验500',d:'累计获得 500 XP'},
+ {id:'q100',e:'📚',n:'百题勇士',d:'累计答题 100 道'},
+ {id:'allstar',e:'🌟',n:'满星收集家',d:'8 关全部 3 星'}
+];
+
+/* ================= 存档 ================= */
+const KEY='genshi_chuangguan_v1';
+const DEF={v:1,xp:0,levels:{},boss:{passed:false,best:0,stars:0},wrong:[],sessionNo:0,checkins:[],badges:{},kp:{},tot:{ans:0,cor:0},maxCombo:0,sound:false,lessonSeen:{},sheets:[],sheetUnlock:[]};
+function load(){try{const raw=JSON.parse(localStorage.getItem(KEY)||'null');const o=Object.assign(JSON.parse(JSON.stringify(DEF)),raw||{});if(!o.lessonSeen)o.lessonSeen={};if(!o.sheets)o.sheets=[];if(!o.sheetUnlock)o.sheetUnlock=[];return o;}catch(e){return JSON.parse(JSON.stringify(DEF));}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+let S=load();
+function ds(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');}
+function today(){return ds(new Date());}
+function addDays(s,n){const p=s.split('-').map(Number);return ds(new Date(p[0],p[1]-1,p[2]+n));}
+function streak(){const set=new Set(S.checkins);let d=today();if(!set.has(d))d=addDays(d,-1);let c=0;while(set.has(d)){c++;d=addDays(d,-1);}return c;}
+function lvInfo(xp){let L=1,need=100,acc=0;while(xp>=acc+need){acc+=need;L++;need=100+(L-1)*50;}return {L,cur:xp-acc,need,title:TITLES[Math.min(L-1,TITLES.length-1)]};}
+const lvPassed=n=>!!(S.levels[n]&&S.levels[n].passed);
+const lvUnlocked=n=>n===1||lvPassed(n-1)||(S.sheetUnlock||[]).includes(n);
+const ALL8=[1,2,3,4,5,6,7,8];
+const allPassed=()=>ALL8.every(lvPassed);
+function curLevel(){for(let n=1;n<=8;n++)if(!lvPassed(n))return n;return 0;}
+const activeWrong=()=>S.wrong.filter(w=>!w.mastered);
+const dueWrong=()=>{const t=today();return S.wrong.filter(w=>!w.mastered&&w.due<=t&&w.after<=S.sessionNo);};
+
+/* ================= 声音 / 特效 ================= */
+let AC=null;
+function beep(type){if(!S.sound)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const ns=type==='ok'?[523,659,784]:type==='win'?[523,659,784,1047,1319]:[392,349];const t0=AC.currentTime;
+ ns.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type='triangle';o.frequency.value=f;const t=t0+i*.09;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.18,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.28);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+.3);});}catch(e){}}
+function confetti(n){n=n||40;const cs=['#ff7a59','#ffc83d','#4ade80','#4fc3ff','#9b83ff','#ff6fb5'];
+ for(let i=0;i<n;i++){const c=document.createElement('div');c.className='cf';c.style.left=Math.random()*100+'vw';c.style.background=pick(cs);
+  c.style.setProperty('--dx',(Math.random()*160-80)+'px');c.style.setProperty('--rot',(Math.random()*900-450)+'deg');c.style.setProperty('--t',(1.2+Math.random()*1.3)+'s');
+  c.style.animationDelay=Math.random()*.3+'s';if(Math.random()<.4)c.style.borderRadius='50%';document.body.appendChild(c);setTimeout(()=>c.remove(),3000);}}
+function floatTxt(t){const d=document.createElement('div');d.className='xpf';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),1300);}
+function toast(t,gold){const d=document.createElement('div');d.className='toast'+(gold?' gold':'');d.innerHTML=t;document.getElementById('toasts').appendChild(d);setTimeout(()=>d.remove(),3200);}
+function addXP(n){const b=lvInfo(S.xp).L;S.xp+=n;const a=lvInfo(S.xp);if(a.L>b){setTimeout(()=>{toast(`🎉 升级啦！Lv.${a.L}「${a.title}」`,true);confetti(50);beep('win');},500);}}
+function checkBadges(){const st=streak();const L=S.levels;const res=[];
+ const cond={first:S.checkins.length>0,s3:st>=3,s7:st>=7,pass1:Object.values(L).some(x=>x.passed),star3:Object.values(L).some(x=>x.stars>=3),combo5:S.maxCombo>=5,
+  clear:S.wrong.some(w=>w.mastered)&&activeWrong().length===0,all:allPassed(),boss:S.boss.passed,xp500:S.xp>=500,q100:S.tot.ans>=100,
+  allstar:ALL8.every(n=>L[n]&&L[n].stars>=3)};
+ BADGES.forEach(b=>{if(cond[b.id]&&!S.badges[b.id]){S.badges[b.id]=today();res.push(b);}});
+ res.forEach((b,i)=>setTimeout(()=>{toast(`${b.e} 获得新徽章：${b.n}！`,true);beep('win');},900+i*700));
+ if(res.length)save();return res;}
+
+/* ================= 吉祥物「小根」 ================= */
+function mascot(m,s){s=s||64;const eyes=m==='happy'?'<path d="M30 46 q6 -8 12 0 M58 46 q6 -8 12 0" stroke="#4a2c00" stroke-width="4" fill="none" stroke-linecap="round"/>'
+ :'<circle cx="36" cy="45" r="5.5" fill="#4a2c00"/><circle cx="64" cy="45" r="5.5" fill="#4a2c00"/><circle cx="38" cy="43" r="2" fill="#fff"/><circle cx="66" cy="43" r="2" fill="#fff"/>';
+ const mouth=m==='think'?'<path d="M43 62 q7 4 14 0" stroke="#4a2c00" stroke-width="4" fill="none" stroke-linecap="round"/>':'<path d="M40 58 q10 12 20 0" stroke="#4a2c00" stroke-width="4" fill="#ff7a7a" stroke-linecap="round"/>';
+ return `<svg class="mascot" width="${s}" height="${s}" viewBox="0 0 100 100" aria-hidden="true"><ellipse cx="50" cy="95" rx="26" ry="4" fill="rgba(0,0,0,.15)"/>
+ <path d="M50 10 C80 10 92 34 92 58 C92 82 74 92 50 92 C26 92 8 82 8 58 C8 34 20 10 50 10Z" fill="#ffc94a" stroke="#e8a21a" stroke-width="3"/>
+ <path d="M50 10 C58 2 66 2 70 6" stroke="#e8a21a" stroke-width="4" fill="none" stroke-linecap="round"/>${eyes}
+ <circle cx="25" cy="58" r="6" fill="#ff9a9a" opacity=".7"/><circle cx="75" cy="58" r="6" fill="#ff9a9a" opacity=".7"/>${mouth}
+ <path d="M32 76 l5 -2.5 l6 10 l9 -20 h16" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+ ${m==='think'?'<path d="M84 26 q4 8 0 11 q-4 -3 0 -11z" fill="#7cc7ff"/>':''}</svg>`;}
+
+/* ================= 出题 ================= */
+function genFrom(lv,used){const gens=G[lv];let q;for(let t=0;t<30;t++){q=pick(gens)();if(!used.has(q.id))break;}used.add(q.id);q.kp=lv;return q;}
+function genLevel(lv,n){const used=new Set();const order=shuffle(G[lv].map((_,i)=>i));const out=[];
+ for(let i=0;i<n;i++){let q=null;if(i<order.length){for(let t=0;t<20;t++){const x=G[lv][order[i]]();if(!used.has(x.id)){q=x;break;}}}
+  if(!q)q=genFrom(lv,used);else used.add(q.id);q.kp=lv;out.push({q});}
+ return out;}
+function genBoss(){const used=new Set();const out=[];for(let lv=1;lv<=8;lv++)out.push({q:genFrom(lv,used)});out.push({q:genFrom(rnd(4,8),used)});out.push({q:genFrom(rnd(4,8),used)});return out;}
+
+/* ================= 会话 ================= */
+let sess=null,lastRes=null,view='home',calOff=0,pendingSess=null,impUI={step:'list',topics:{},note:'',preview:null,thumb:null,viewId:null};
+function startSession(mode,lv,opts){opts=opts||{};
+ if(mode==='review'&&!dueWrong().length){toast('现在没有需要复习的题啦 🎉');return;}
+ const needLesson=(mode==='level'||mode==='boss')&&!opts.skipLesson;
+ const lid=mode==='boss'?'boss':String(lv);
+ if(needLesson&&!S.lessonSeen[lid]){pendingSess={mode,lv};closeModal();go('lesson');return;}
+ beginQuiz(mode,lv);}
+function beginQuiz(mode,lv){let qs;
+ S.sessionNo++;save();
+ if(mode==='level')qs=genLevel(lv,5);
+ else if(mode==='boss')qs=genBoss();
+ else if(mode==='review')qs=shuffle(dueWrong()).slice(0,10).map(w=>({q:w.q,sr:w.id}));
+ else{const due=shuffle(dueWrong()).slice(0,3).map(w=>({q:w.q,sr:w.id}));const L=curLevel()||rnd(1,8);const used=new Set(due.map(d=>d.q.id));
+  const fresh=genLevel(L,5).filter(x=>!used.has(x.q.id));qs=due.concat(fresh).slice(0,5);while(qs.length<5)qs.push({q:genFrom(rnd(1,8),used)});}
+ sess={mode,lv,qs,i:0,correct:0,combo:0,usedHint:false,xp:0,locked:false,hint:false,choice:-1};pendingSess=null;closeModal();go('quiz');}
+function cur(){return sess.qs[sess.i];}
+function pickOpt(j){if(!sess||sess.locked)return;sess.choice=j;judge(j===cur().q.answer);}
+function normNum(s){s=String(s).trim().replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-65248)).replace(/[．。]/g,'.').replace(/[−－—]/g,'-').replace(/\s/g,'');
+ if(/^-?\d+\/\d+$/.test(s)){const p=s.split('/');return Number(p[0])/Number(p[1]);}if(!/^-?(\d+\.?\d*|\.\d+)$/.test(s))return NaN;return Number(s);}
+function submitFill(){if(!sess||sess.locked)return;const el=document.getElementById('fin');const v=normNum(el.value);
+ if(isNaN(v)){el.classList.remove('bad');void el.offsetWidth;el.classList.add('bad');toast('请输入一个数字哦～');return;}
+ sess.fillVal=el.value;judge(Math.abs(v-cur().q.answer)<1e-9);}
+function addWrong(q,meta){meta=meta||{};const t=today();const ex=S.wrong.find(w=>w.qid===q.id&&!w.mastered);
+ if(ex){ex.streak=0;ex.due=t;ex.after=Math.min(ex.after||0,S.sessionNo);ex.miss=(ex.miss||1)+1;if(meta.fromSheet)ex.fromSheet=true;return;}
+ S.wrong.push({id:'w'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),qid:q.id,q,kp:q.kp,streak:0,due:t,after:S.sessionNo,mastered:false,added:t,miss:1,fromSheet:!!meta.fromSheet});}
+function judge(ok){const it=cur(),q=it.q;sess.locked=true;sess.last=ok;it.res=ok?1:0;S.tot.ans++;
+ const k=S.kp[q.kp]||(S.kp[q.kp]=[]);k.push(ok?1:0);if(k.length>10)k.shift();
+ let gain=2;
+ if(ok){S.tot.cor++;sess.correct++;sess.combo++;S.maxCombo=Math.max(S.maxCombo,sess.combo);gain=10+Math.min(sess.combo-1,5)*2;}
+ else sess.combo=0;
+ sess.xp+=gain;addXP(gain);
+ if(it.sr){const w=S.wrong.find(x=>x.id===it.sr);if(w){if(ok){w.streak++;if(w.streak>=3){w.mastered=true;w.mdate=today();it.mastered=true;}else{w.due=addDays(today(),w.streak===1?1:3);w.after=0;}}
+   else{w.streak=0;w.due=today();w.after=S.sessionNo+1;w.miss=(w.miss||1)+1;}}}
+ else if(!ok)addWrong(q);
+ save();checkBadges();render();
+ if(ok){confetti(sess.combo>=3?55:32);floatTxt(`+${gain} XP`);beep('ok');}else{document.querySelectorAll('.cf').forEach(c=>c.remove());beep('no');}
+ showSheet(ok,it);}
+const PRAISE=['太棒了！','完全正确！','你真厉害！','漂亮！','稳稳的！','聪明！','就是这样！'];
+const COMFORT=['差一点点，没关系！','错了也是在进步哦～','别担心，我们一起看看！','这题有个小陷阱～'];
+function ansHtml(q){return q.type==='mc'?q.options[q.answer]:String(q.answer);}
+function stepsHtml(q){return `<div class="steps"><b>📖 讲解</b><ol>${q.steps.map(s=>`<li>${s}</li>`).join('')}</ol></div>`;}
+function showSheet(ok,it){const q=it.q;const sh=document.getElementById('sheet');const inn=sh.querySelector('.in');
+ let extra='';if(it.sr&&ok)extra=it.mastered?'<div class="pill g">🎉 这道错题已经掌握啦！</div>':'<div class="pill g">复习进度 +1，再对几次就掌握啦</div>';
+ if(!ok)extra='<div class="pill o">已放进错题本，过几天再来挑战它 📒</div>';
+ inn.className='in '+(ok?'ok':'no');
+ inn.innerHTML=`<div class="fbh">${mascot(ok?'happy':'think',58)}<div><div class="t">${ok?pick(PRAISE):pick(COMFORT)}</div>
+ <div class="sub">${ok?(sess.combo>=2?`连击 ×${sess.combo}！继续保持 🔥`:'继续加油！'):'认真思考也有 +2 XP 哦'}</div></div></div>
+ ${ok?'':`<div class="ansline">💡 ${q.hint}</div><div class="ansline">正确答案：${ansHtml(q)}</div>`}
+ ${ok?`<details style="margin-top:10px"><summary class="sub" style="font-weight:700">看看讲解 ▸</summary>${stepsHtml(q)}</details>`:stepsHtml(q)}
+ ${extra}<button class="btn ${ok?'ok':'pri'} block" id="nextBtn" style="margin-top:14px" onclick="nextQ()">${sess.i+1>=sess.qs.length?'看看成绩 🏁':(ok?'下一题 →':'我明白了，下一题 →')}</button>`;
+ inn.scrollTop=0;sh.classList.add('show');}
+function hideSheet(){document.getElementById('sheet').classList.remove('show');}
+function nextQ(){if(!sess)return;hideSheet();sess.i++;sess.locked=false;sess.hint=false;sess.choice=-1;if(sess.i>=sess.qs.length)finish();else{render();window.scrollTo(0,0);}}
+function useHint(){sess.hint=true;sess.usedHint=true;render();}
+function quitQuiz(){modal(`<div class="center">${mascot('normal',70)}<h2>要先休息一下吗？</h2><p class="sub">已经答过的题会记录下来，但这一轮不算完成哦。</p></div>
+ <div class="stack"><button class="btn pur block" onclick="closeModal()">继续答题 💪</button><button class="btn ghost block" onclick="closeModal();hideSheet();sess=null;go('home')">先休息一下</button></div>`);}
+function finish(){const s=sess;const tot=s.qs.length,c=s.correct;const r={mode:s.mode,lv:s.lv,c,tot,xp:s.xp,stars:0,pass:false};
+ if(s.mode==='level'||s.mode==='boss'){const need=s.mode==='boss'?8:4;r.pass=c>=need;r.need=need;
+  if(r.pass)r.stars=1+(c===tot?1:0)+(s.usedHint?0:1);
+  if(s.mode==='level'){const L=S.levels[s.lv]||{stars:0,best:0,passed:false,plays:0};r.first=!L.passed&&r.pass;L.plays++;L.best=Math.max(L.best,c);
+   if(r.pass){L.passed=true;L.stars=Math.max(L.stars,r.stars);}S.levels[s.lv]=L;}
+  else{r.first=!S.boss.passed&&r.pass;S.boss.best=Math.max(S.boss.best||0,c);if(r.pass){S.boss.passed=true;S.boss.stars=Math.max(S.boss.stars||0,r.stars);}}
+  if(r.pass){const b=30+r.stars*10+(s.mode==='boss'?100:0);addXP(b);r.xp+=b;}}
+ if(s.mode==='daily'){const t=today();if(!S.checkins.includes(t)){S.checkins.push(t);r.checkin=true;addXP(30);r.xp+=30;}}
+ r.mastered=s.qs.filter(x=>x.mastered).length;
+ save();checkBadges();lastRes=r;sess=null;go('result');
+ if(r.pass||r.checkin){confetti(90);beep('win');}}
+
+/* ================= 视图 ================= */
+function go(v){view=v;render();window.scrollTo(0,0);}
+function render(){const app=document.getElementById('app');if(view==='quiz'&&!sess)view='home';if(view==='lesson'&&!pendingSess&&!(sess&&sess.showLesson))view='home';
+ const V={home:vHome,map:vMap,wrong:vWrong,badge:vBadge,quiz:vQuiz,result:vResult,import:vImport,lesson:vLesson}[view]||vHome;app.innerHTML=V();
+ const nav=document.getElementById('nav');const hideNav=view==='quiz'||view==='result'||view==='lesson';nav.style.display=hideNav?'none':'';app.classList.toggle('noNav',hideNav);
+ nav.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===view||(view==='import'&&b.dataset.v==='home')));}
+function stars3(n){return [1,2,3].map(i=>`<span class="${i<=n?'':'star-off'}">⭐</span>`).join('');}
+function topBar(){const L=lvInfo(S.xp);return `<div class="top"><div class="lvchip"><span class="lvnum">Lv.${L.L}</span><div style="flex:1;min-width:0"><div class="lvt">${L.title} · ${L.cur}/${L.need} XP</div><div class="xpbar"><i style="width:${Math.round(L.cur/L.need*100)}%"></i></div></div></div>
+ <div class="fire" title="连续打卡天数">🔥 ${streak()}</div><button class="iconbtn" onclick="openSettings()" aria-label="设置">⚙️</button></div>`;}
+function greet(){const st=streak(),done=S.checkins.includes(today());if(done)return '今天已经打卡啦！你真棒～想多练一组也可以哦 ✨';
+ if(st>0)return `已经连续 ${st} 天啦！今天也来点燃火苗吧 🔥`;if(S.tot.ans===0)return '嗨！我是小根～每天 5 道题，我们一起慢慢变强！';return '欢迎回来！今天只要 5 道题，5 分钟就能搞定～';}
+function vHome(){const done=S.checkins.includes(today());const due=dueWrong().length;const cl=curLevel();const nrev=Math.min(due,3);const np=ALL8.filter(lvPassed).length;
+ return `${topBar()}<div class="hero">${mascot('happy',78)}<div class="bub">${greet()}</div></div>
+ <div class="card daily"><div class="row"><div class="sp"><div class="sub">每日打卡</div><div class="big">${done?'今日任务已完成 ✅':'今日任务：5 道题'}</div></div><div style="font-size:42px">${done?'🏅':'🎯'}</div></div>
+ <div style="margin:8px 0 12px">${nrev?`<span class="pill o">🔁 复习错题 ${nrev} 题</span>`:''}<span class="pill">✨ 新题 ${5-nrev} 题</span><span class="pill g">⏱️ 约 5 分钟</span></div>
+ <button class="btn ${done?'pur':'pri'} block" id="dailyBtn" onclick="startSession('daily')">${done?'再练一组 💪':'开始今日挑战 🚀'}</button></div>
+ <div class="card"><div class="row"><div class="sp"><div class="sub">闯关进度</div><div style="font-size:18px;font-weight:900">${cl?`第 ${cl} 关 · ${LV[cl-1].name}`:(S.boss.passed?'全部通关！Boss 已击败 👑':'Boss 关已解锁！👹')}</div></div>
+ <div style="font-size:15px;font-weight:800;color:var(--pur)">${np}/8</div></div>
+ <div class="prog" style="margin:10px 0 12px"><i style="width:${np/8*100}%"></i></div>
+ <button class="btn gold block" onclick="openLevel(${cl||9})">${cl?'继续闯关 ⚔️':'挑战 Boss 👹'}</button></div>
+ <div class="card impcard" id="importCard" onclick="openImport()" style="cursor:pointer"><div class="row"><div style="font-size:40px">📷</div><div class="sp"><div class="big" style="font-size:20px;font-weight:900">导入试卷</div><div class="sub">拍一张作业 / 从相册选图，小根帮你对照知识点练</div></div><div style="font-size:22px">›</div></div>${(S.sheets&&S.sheets.length)?`<div class="sub" style="margin-top:8px">已保存 ${S.sheets.length} 份试卷</div>`:''}</div>
+ ${due?`<div class="card row" onclick="go('wrong')" style="cursor:pointer"><div style="font-size:34px">📒</div><div class="sp"><b>有 ${due} 道错题等你复习</b><div class="sub">复习对 3 次就算掌握啦</div></div><div style="font-size:22px">›</div></div>`:''}
+ <div class="card">${calHtml()}</div>`;}
+function calHtml(){const now=new Date();const first=new Date(now.getFullYear(),now.getMonth()+calOff,1);const y=first.getFullYear(),m=first.getMonth();
+ const days=new Date(y,m+1,0).getDate(),w0=first.getDay();const set=new Set(S.checkins),t=today();let cells='日一二三四五六'.split('').map(x=>`<div class="cw">${x}</div>`).join('');let cnt=0;
+ for(let i=0;i<w0;i++)cells+='<div class="cd e"></div>';
+ for(let d=1;d<=days;d++){const k=ds(new Date(y,m,d));const on=set.has(k);if(on)cnt++;cells+=`<div class="cd ${on?'on':''} ${k===t?'td':''}">${on?'<span class="fl">🔥</span>':''}<span class="dn">${d}</span></div>`;}
+ return `<div class="calh"><button onclick="calOff--;render()" aria-label="上个月">‹</button><div class="center"><b style="font-size:17px">📅 ${y}年${m+1}月 打卡日历</b><div class="sub">本月打卡 ${cnt} 天 · 连胜 🔥${streak()} 天</div></div><button onclick="calOff++;render()" aria-label="下个月">›</button></div><div class="cal">${cells}</div>`;}
+function vMap(){const xs=[50,74,76,56,30,22,36,62,50];const gap=150,top0=70;let nodes='';const pts=[];const cl=curLevel();
+ for(let n=1;n<=9;n++){const isB=n===9;const y=top0+(n-1)*gap+(isB?14:0);const x=xs[n-1];pts.push(`${x},${y}`);
+  const unlocked=isB?allPassed():lvUnlocked(n);const passed=isB?S.boss.passed:lvPassed(n);const st=isB?(S.boss.stars||0):(S.levels[n]?S.levels[n].stars:0);
+  const info=isB?BOSS:LV[n-1];const isCur=isB?(unlocked&&!passed):n===cl;
+  nodes+=`<button class="node ${isB?'boss':''} ${unlocked?(passed?'passed':''):'locked'} ${isCur?'cur':''}" style="left:${x}%;top:${y}px" onclick="openLevel(${n})" aria-label="${info.name}">
+  ${isCur?'<div class="cur-flag">⬇️</div>':''}<div class="c">${unlocked?(isB?'👹':n):'🔒'}</div><div class="lb">${isB?'Boss 关':n+'. '+info.short}</div>
+  <div class="st">${unlocked?stars3(st):''}</div></button>`;}
+ const H=top0+8*gap+110;
+ return `${topBar()}<div class="ptitle">🗺️ 二次根式大冒险</div><div class="sub" style="color:#fff;margin:2px 4px 0">每关 5 题，答对 4 题就过关！全部通关解锁 Boss</div>
+ <div class="map" style="height:${H}px"><svg class="path" viewBox="0 0 100 ${H}" preserveAspectRatio="none"><polyline points="${pts.join(' ')}" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="7" stroke-dasharray="2 14" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>${nodes}</div>`;}
+function openLevel(n){const isB=n===9;const unlocked=isB?allPassed():lvUnlocked(n);
+ if(!unlocked){toast(isB?'通过全部 8 关就能挑战 Boss 哦 🔒':`先通过第 ${n-1} 关就能解锁啦 🔒`);return;}
+ const info=isB?BOSS:LV[n-1];const L=isB?S.boss:S.levels[n];const st=L?(L.stars||0):0;
+ modal(`<div class="center"><div style="font-size:52px">${info.icon}</div><h2>${isB?'':'第 '+n+' 关 · '}${info.name}</h2><div style="font-size:22px">${stars3(st)}</div></div>
+ <div class="hintb"><b>📝 闯关小贴士</b><br>${info.tip}</div>
+ <div class="sub" style="margin-top:10px;line-height:1.7">${isB?'共 10 题，答对 8 题击败 Boss。':'共 5 题，答对 4 题过关。'}<br>⭐ 过关 · 全对 +1⭐ · 不用提示 +1⭐</div>
+ <div class="stack"><button class="btn pri block" id="startBtn" onclick="startSession('${isB?'boss':'level'}',${n})">${isB?'挑战 Boss 👹':'开始闯关 ⚔️'}</button><button class="btn ghost block" onclick="closeModal()">再看看</button></div>`);}
+function vQuiz(){const it=cur(),q=it.q;const info=LV[q.kp-1];
+ const dots=sess.qs.map((x,j)=>`<span class="dot ${x.res===1?'g':x.res===0?'o':''} ${j===sess.i?'cur':''}"></span>`).join('');
+ const title=sess.mode==='daily'?'🎯 每日打卡':sess.mode==='boss'?'👹 Boss 关':sess.mode==='review'?'🔁 错题复习':`第 ${sess.lv} 关`;
+ let body;
+ if(q.type==='mc'){body=`<div class="opts">${q.options.map((o,j)=>{const c=sess.locked?(j===q.answer?'right':(j===sess.choice?'wrongc':'dim')):'';
+  return `<button class="opt ${c}" ${sess.locked?'disabled':''} onclick="pickOpt(${j})"><span class="ol">${'ABCD'[j]}</span><span class="ot">${o}</span></button>`;}).join('')}</div>`;}
+ else{body=`<div class="card" style="padding:14px"><div class="sub" style="margin:0 0 8px">✍️ 填一个数（可以写小数）</div><div class="fill"><input id="fin" type="text" inputmode="decimal" autocomplete="off" placeholder="?" ${sess.locked?'disabled':''} value="${sess.locked?String(sess.fillVal).replace(/["<>&]/g,''):''}" onkeydown="if(event.key==='Enter')submitFill()">
+  <button class="btn pri" style="min-width:96px" onclick="submitFill()" ${sess.locked?'disabled':''}>确定</button></div></div>`;}
+ return `<div class="qtop"><button class="iconbtn" onclick="quitQuiz()" aria-label="退出">✕</button><div class="dots">${dots}</div>${sess.combo>=2?`<div class="combo ${sess.locked&&sess.last?'pop':''}">⚡×${sess.combo}</div>`:`<div style="min-width:46px;text-align:center;font-weight:900">${sess.i+1}/${sess.qs.length}</div>`}</div>
+ <div style="color:#fff;font-weight:800;margin:10px 4px 0">${title}</div>
+ <div class="card qcard"><span class="qtag">${info.icon} ${info.name}</span>${it.sr?'<span class="qtag rev">🔁 错题复习</span>':''}
+ <div class="stem">${q.stem}</div>${sess.hint?`<div class="hintb">💡 ${q.hint}</div>`:''}</div>
+ ${body}
+ <div class="qbar" style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">${!sess.locked&&!sess.hint?`<button class="btn ghost" style="flex:1;background:rgba(255,255,255,.85)" onclick="useHint()">💡 给我一点提示</button>`:''}${(sess.mode==='level'||sess.mode==='boss')?`<button class="btn ghost" style="flex:1;background:rgba(255,255,255,.85)" onclick="reopenLesson()">📖 再看一遍公式</button>`:''}</div>`;}
+function vResult(){const r=lastRes;if(!r)return vHome();let head,body='';
+ const xpL=`<div class="pill" style="font-size:16px">+${r.xp} XP</div>`;
+ if(r.mode==='level'||r.mode==='boss'){
+  if(r.pass){head=`${mascot('happy',90)}<h2 style="font-size:26px">${r.mode==='boss'?'Boss 被你打败啦！👑':'闯关成功！'}</h2><div class="bigstars">${stars3(r.stars)}</div>`;
+   body=`<div class="score">${r.c} / ${r.tot}</div>${xpL}${r.first&&r.mode==='level'&&r.lv<8?`<p><b>🔓 第 ${r.lv+1} 关已解锁！</b></p>`:''}${r.first&&r.mode==='level'&&r.lv===8?'<p><b>🔓 Boss 关已解锁！</b></p>':''}${r.stars<3?`<p class="sub">${r.c<r.tot?'全部答对可以多拿一颗星':'不用提示也全对，就能拿 3 星'} ⭐</p>`:''}`;}
+  else{head=`${mascot('normal',90)}<h2 style="font-size:24px">就差一点点！</h2>`;body=`<div class="score">${r.c} / ${r.tot}</div><p>答对 ${r.need} 题就能过关。错的题已经放进错题本，看过讲解再来一次，一定行！💪</p>${xpL}`;}}
+ else if(r.mode==='daily'){head=`${mascot('happy',90)}<h2 style="font-size:26px">${r.checkin?'今日打卡成功！':'加练完成！'}</h2><div style="font-size:50px">🔥 ${streak()}</div><div class="sub">连续打卡天数</div>`;
+  body=`<div class="score" style="margin-top:8px">${r.c} / ${r.tot}</div>${xpL}${r.mastered?`<p>🎉 有 ${r.mastered} 道错题被你彻底掌握！</p>`:''}<p class="sub">明天再来，火苗会越来越旺哦～</p>`;}
+ else{head=`${mascot('happy',90)}<h2>复习完成！</h2>`;body=`<div class="score">${r.c} / ${r.tot}</div>${xpL}${r.mastered?`<p>🎉 ${r.mastered} 道错题已掌握！</p>`:'<p>每道错题连续答对 3 次就掌握啦～</p>'}`;}
+ let btns='';
+ if(r.mode==='level'){if(r.pass&&r.lv<8)btns+=`<button class="btn pri block" onclick="openLevel(${r.lv+1})">下一关 →</button>`;if(r.pass&&r.lv===8)btns+=`<button class="btn pri block" onclick="openLevel(9)">挑战 Boss 👹</button>`;
+  btns+=`<button class="btn ${r.pass?'pur':'pri'} block" onclick="startSession('level',${r.lv})">再来一次 🔄</button><button class="btn ghost block" onclick="go('map')">返回地图 🗺️</button>`;}
+ else if(r.mode==='boss')btns=`<button class="btn pri block" onclick="startSession('boss',9)">再战 Boss 🔄</button><button class="btn ghost block" onclick="go('map')">返回地图 🗺️</button>`;
+ else btns=`<button class="btn pri block" onclick="go('home')">回到首页 🏠</button><button class="btn ghost block" onclick="go('wrong')">去错题本 📒</button>`;
+ return `<div class="card res" style="margin-top:30px">${head}${body}<div class="stack">${btns}</div></div>`;}
+function dueTxt(w){const t=today();if(w.due<=t)return w.after>S.sessionNo?'下一轮练习复习':'今天可复习';if(w.due===addDays(t,1))return '明天复习';const p=w.due.split('-');return `${+p[1]}月${+p[2]}日复习`;}
+function vWrong(){const act=activeWrong(),due=dueWrong(),mas=S.wrong.filter(w=>w.mastered).length;
+ const kps=LV.map((l,i)=>{const a=S.kp[i+1]||[];const pct=a.reduce((x,y)=>x+y,0)*10;const nw=act.filter(w=>w.kp===i+1).length;
+  return `<div class="kp"><div class="row"><span>${l.icon} ${l.name}</span><span class="sp"></span><span class="sub">${a.length?pct+'%':'未练习'}${nw?` · 待复习 ${nw}`:''}</span></div><div class="prog" style="height:12px;margin-top:5px"><i style="width:${pct}%;${pct>=80?'background:linear-gradient(90deg,#4ade80,#22c55e)':''}"></i></div></div>`;}).join('');
+ const items=act.slice().sort((a,b)=>a.due<b.due?-1:1).map(w=>`<details class="witem"><summary><div class="row" style="margin-bottom:4px"><span class="pill">${LV[w.kp-1].short}</span>${w.fromSheet?'<span class="pill o">来自试卷</span>':''}<span class="sp"></span><span class="sr">${[0,1,2].map(i=>`<i class="${i<w.streak?'f':''}"></i>`).join('')}</span><span class="sub" style="margin-left:6px">${dueTxt(w)}</span></div><div class="wst">${w.q.stem}</div><div class="sub">点开看答案和讲解 ▸</div></summary>
+  <div class="ansline">正确答案：${ansHtml(w.q)}</div>${stepsHtml(w.q)}</details>`).join('');
+ return `${topBar()}<div class="ptitle">📒 错题本</div>
+ <div class="card"><div style="font-size:18px;font-weight:900">待复习 ${act.length} 题 · 已掌握 ${mas} 题</div><div class="sub" style="line-height:1.6">错题会在下一轮练习、1 天后、3 天后再出现，连续答对 3 次 <span class="sr"><i class="f"></i><i class="f"></i><i class="f"></i></span> 就算掌握</div>
+ <button class="btn ${due.length?'pri':'ghost'} block" id="reviewBtn" style="margin-top:12px" onclick="startSession('review')" ${due.length?'':'disabled'}>${due.length?`开始复习（${Math.min(due.length,10)} 题）🔁`:(act.length?'暂时没有到期的错题，晚点再来 ⏰':'错题本空空的，真棒 🎉')}</button></div>
+ <div class="card"><h2>📊 掌握进度</h2><div class="sub" style="margin-bottom:4px">按每个知识点最近 10 次答题计算</div>${kps}</div>
+ ${act.length?`<div class="card"><h2>📝 错题列表</h2>${items}</div>`:''}`;}
+function vBadge(){const L=lvInfo(S.xp);const acc=S.tot.ans?Math.round(S.tot.cor/S.tot.ans*100):0;const got=BADGES.filter(b=>S.badges[b.id]).length;
+ return `${topBar()}<div class="ptitle">🏆 我的成就</div>
+ <div class="card center">${mascot('happy',70)}<div style="font-size:22px;font-weight:900">Lv.${L.L} · ${L.title}</div><div class="prog" style="margin:10px 0 4px"><i style="width:${L.cur/L.need*100}%;background:linear-gradient(90deg,#ffe07a,#ffb02e)"></i></div><div class="sub">还差 ${L.need-L.cur} XP 升到 Lv.${L.L+1}「${TITLES[Math.min(L.L,TITLES.length-1)]}」</div></div>
+ <div class="card"><div class="stat"><div><b>${S.xp}</b>总 XP</div><div><b>🔥${streak()}</b>连续打卡</div><div><b>${S.tot.ans}</b>累计答题</div><div><b>${acc}%</b>正确率</div><div><b>⚡${S.maxCombo}</b>最高连击</div><div><b>${S.checkins.length}</b>打卡天数</div></div></div>
+ <div class="card"><h2>🎖️ 徽章 ${got}/${BADGES.length}</h2><div class="bgrid">${BADGES.map(b=>`<div class="bdg ${S.badges[b.id]?'on':'off'}"><div class="e">${b.e}</div><div class="n">${b.n}</div><div class="d">${S.badges[b.id]?'✅ '+S.badges[b.id]:b.d}</div></div>`).join('')}</div></div>`;}
+function modal(h){const m=document.getElementById('modal');m.querySelector('.box').innerHTML=h;m.classList.add('show');}
+function closeModal(){document.getElementById('modal').classList.remove('show');}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
+function openSettings(){modal(`<h2>⚙️ 设置</h2>
+ <div class="row" style="margin:14px 0"><div class="sp"><b>🔊 音效</b><div class="sub">答对 / 答错时播放小音效</div></div><button class="switch ${S.sound?'on':''}" onclick="S.sound=!S.sound;save();this.classList.toggle('on');beep('ok')" aria-label="音效开关"></button></div>
+ <div class="hintb" style="font-size:14px">进度只保存在这台设备的这个浏览器里（localStorage）。清除浏览器数据或换浏览器打开，进度会丢失。</div>
+ <div class="stack"><button class="btn pur block" onclick="closeModal()">好的</button><button class="btn ghost block danger" id="resetBtn" style="font-size:15px" onclick="confirmReset()">重置全部进度…</button></div>`);}
+function confirmReset(){modal(`<div class="center"><div style="font-size:50px">⚠️</div><h2>确定要重置吗？</h2><p class="sub">XP、星星、徽章、打卡记录、错题本都会被清空，而且<b>不能恢复</b>。</p></div>
+ <div class="stack"><button class="btn ghost block" onclick="openSettings()">不了，返回</button><button class="btn block" id="resetYes" style="background:#e5484d;color:#fff;box-shadow:0 5px 0 #a8262b" onclick="doReset()">确定清空</button></div>`);}
+function doReset(){localStorage.removeItem(KEY);S=load();sess=null;closeModal();go('home');toast('进度已重置，重新出发吧！🌱');}
+
+/* ================= 课前小课堂 ================= */
+const LESSONS={
+1:{title:'热身：开平方',icon:'🌱',say:'嗨！这一关超级简单，就像开礼物～完全平方数直接开就行！',
+ formulasHtml:null,
+ example:{q:`算一算：${R(36)} = ？`,steps:[`想：哪个正数 × 自己 = 36？`,`6 × 6 = 36`,`所以 ${R(36)} = 6（算术平方根是非负数）`]},
+ kou:'完全平方数直接开。'},
+2:{title:'有意义条件',icon:'🔑',say:'根号可娇气啦——里面不能是负数，分母也不能是零！',
+ formulasHtml:`${R('a')} 有意义 ⇔ a ≥ 0<br>若有分母，还要 <b>分母 ≠ 0</b>`,
+ example:{q:`要使 ${R('x − 3')} 有意义，x ？`,steps:[`被开方数 ≥ 0：x − 3 ≥ 0`,`移项：x ≥ 3`]},
+ kou:'根号里不能负，分母不能零。'},
+3:{title:'√(a²)=|a|',icon:'⚖️',say:'拿出字母前，先问问它是正还是负——结果其实是绝对值哦！',
+ formulasHtml:`${R('a²')} = |a|<br>a ≥ 0 → 等于 a；a &lt; 0 → 等于 −a`,
+ example:{q:`若 x &lt; 2，化简 ${R('(x − 2)²')}`,steps:[`${R('(x − 2)²')} = |x − 2|`,`因为 x &lt; 2，所以 x − 2 &lt; 0`,`|x − 2| = 2 − x`]},
+ kou:'拿出字母先问正负，结果是绝对值。'},
+4:{title:'化简二次根式',icon:'✂️',say:'把最大的完全平方因数"搬"出来，根号就会变瘦～',
+ formulasHtml:`${R('a²b')} = |a|${R('b')}　（b ≥ 0）`,
+ example:{q:`化简：${R(12)}`,steps:[`12 = 4 × 3，4 是完全平方数`,`${R(12)} = ${R(4)} × ${R(3)} = 2${R(3)}`]},
+ kou:'拆出最大完全平方因数。'},
+5:{title:'最简二次根式',icon:'💎',say:'"最简"就是根号里面干干净净：没有平方因数，也没有分母！',
+ formulasHtml:`最简二次根式要同时满足：<br>① 被开方数<b>不含</b>能开得尽方的因数/因式<br>② 被开方数<b>不含分母</b>（也不能是小数）`,
+ example:{q:`${R(18)} 是最简吗？`,steps:[`${R(18)} = ${R('9 × 2')} = 3${R(2)}`,`含完全平方因数 9，所以不是最简`,`最简形式是 3${R(2)}`]},
+ kou:'里面干净、没有分母。'},
+6:{title:'同类二次根式',icon:'👯',say:'先化成最简，再看根号里面是不是同一个数——一样就是同类！',
+ formulasHtml:`最简后被开方数相同 ⇔ 同类二次根式<br>例：${R(12)}=2${R(3)} 与 ${R(27)}=3${R(3)} 是同类`,
+ example:{q:`${R(8)} 与 ${R(18)} 是同类吗？`,steps:[`${R(8)} = 2${R(2)}，${R(18)} = 3${R(2)}`,`被开方数都是 2 → 是同类 ✓`]},
+ kou:'化简完看里面一不一样。'},
+7:{title:'二次根式加减',icon:'➕',say:'只有同类才能合并，就像合并同类项。乱加可不行哦！',
+ formulasHtml:`同类：系数相加，根号不变<br>${R(2)} + ${R(3)} ≠ ${R(5)}　（不是同类！）`,
+ example:{q:`计算：${R(8)} + ${R(18)}`,steps:[`${R(8)}=2${R(2)}，${R(18)}=3${R(2)}`,`2${R(2)} + 3${R(2)} = 5${R(2)}`]},
+ kou:'同类才能加减，别乱合并。'},
+8:{title:'乘除与分母有理化',icon:'🚀',say:'乘除好办：根号乘根号，被开方数相乘。分母有根号？两边同乘一个，分母就干净啦！',
+ formulasHtml:`${R('a')} · ${R('b')} = ${R('ab')}　（a、b ≥ 0）<br>${F(1,R('a'))} = ${F(R('a'),'a')}`,
+ example:{q:`分母有理化：${F(1,R(3))}`,steps:[`分子分母同乘 ${R(3)}`,`${F(1,R(3))} = ${F(R(3),R(3)+'·'+R(3))} = ${F(R(3),3)}`]},
+ kou:'分子分母同乘根号，分母变干净。'},
+boss:{title:'Boss 战前速记',icon:'👹',say:'大魔王来了！把八句口诀过一遍，就像带齐装备再出战～',
+ formulasHtml:null,example:null,kou:null,isBoss:true}
+};
+// fix L1 formulasHtml
+LESSONS[1].formulasHtml=`完全平方数直接开：${R(9)}=3，${R(36)}=6<br>${R('0.25')}=0.5　·　${R(F(1,4))}=${F(1,2)}`;
+const KOU8=[
+[1,'完全平方数直接开。'],[2,'根号里不能负，分母不能零。'],[3,'拿出字母先问正负，结果是绝对值。'],
+[4,'拆出最大完全平方因数。'],[5,'里面干净、没有分母。'],[6,'化简完看里面一不一样。'],
+[7,'同类才能加减，别乱合并。'],[8,'分子分母同乘根号，分母变干净。']];
+function lessonId(mode,lv){return mode==='boss'?'boss':String(lv);}
+function vLesson(){const ps=pendingSess||(sess&&sess.showLesson?{mode:sess.mode,lv:sess.lv,fromQuiz:true}:null);
+ if(!ps)return vHome();const lid=lessonId(ps.mode,ps.lv);const L=LESSONS[lid]||LESSONS[1];const seen=!!S.lessonSeen[lid];
+ let body='';
+ if(L.isBoss){body=`<ul class="chklist">${KOU8.map(([n,k])=>`<li>${LV[n-1].icon} <b>第${n}关</b> · ${k}</li>`).join('')}</ul>`;}
+ else{body=`<div class="formula">${L.formulasHtml}</div>
+ <div class="ex"><div class="ttl">📝 例题：${L.example.q}</div><ol style="margin:6px 0;padding-left:22px;line-height:1.8">${L.example.steps.map(x=>`<li>${x}</li>`).join('')}</ol></div>
+ <div class="kou">🗣️ 记住口诀：${L.kou}</div>`;}
+ const goBtn=ps.fromQuiz
+  ?`<button class="btn pri block" id="lessonGo" onclick="closeLessonReview()">回到题目 →</button>`
+  :`<button class="btn pri block" id="lessonGo" onclick="finishLesson(false)">学会了，开始闯关！⚔️</button>${seen?`<button class="btn ghost block" id="lessonSkip" onclick="finishLesson(true)">跳过小课堂，直接答题</button>`:''}`;
+ return `<div class="qtop"><button class="iconbtn" onclick="cancelLesson()" aria-label="返回">←</button><div class="sp" style="text-align:center;font-weight:900;font-size:18px">📖 课前小课堂</div><div style="width:46px"></div></div>
+ <div class="card lesson" style="margin-top:12px"><div class="row">${mascot('happy',64)}<div class="sp"><div style="font-size:20px;font-weight:900">${L.icon} ${L.title}</div><div class="sub" style="margin-top:4px;line-height:1.5">${L.say}</div></div></div>
+ ${body}</div><div class="stack" style="margin:14px 4px">${goBtn}</div>`;}
+function finishLesson(skipOnly){if(!pendingSess)return;const lid=lessonId(pendingSess.mode,pendingSess.lv);
+ if(!skipOnly||!S.lessonSeen[lid]){S.lessonSeen[lid]=true;save();}
+ const {mode,lv}=pendingSess;beginQuiz(mode,lv);}
+function cancelLesson(){if(sess&&sess.showLesson){sess.showLesson=false;go('quiz');return;}pendingSess=null;go('map');}
+function reopenLesson(){if(!sess)return;sess.showLesson=true;pendingSess={mode:sess.mode,lv:sess.lv,fromQuiz:true};go('lesson');}
+function closeLessonReview(){if(sess)sess.showLesson=false;pendingSess=null;go('quiz');}
+
+/* ================= 导入试卷 ================= */
+const SHEET_PRE=[2,3,4,5,6,7,8]; // 对照作业预勾选
+function openImport(){impUI={step:'list',topics:{},note:'',preview:null,thumb:null,viewId:null};go('import');}
+function vImport(){if(impUI.step==='scan')return vImpScan();if(impUI.step==='result')return vImpResult();if(impUI.step==='detail')return vImpDetail();return vImpList();}
+function vImpList(){const list=(S.sheets||[]).slice().reverse();
+ return `${topBar()}<div class="ptitle">📷 导入试卷</div>
+ <div class="card"><div class="row">${mascot('happy',60)}<div class="sp"><b>把作业拍给我看看～</b><div class="sub">小根会对照二次根式知识点，帮你挑出要练的关卡</div></div></div>
+ <div class="stack" style="margin-top:14px">
+  <label class="btn pri block filebtn" id="pickCam">📸 拍照<input type="file" accept="image/*" capture="environment" onchange="onSheetFile(event)"></label>
+  <label class="btn pur block filebtn" id="pickLib">🖼️ 从相册选择<input type="file" accept="image/*" onchange="onSheetFile(event)"></label>
+ </div>
+ <p class="sub" style="margin-top:10px;line-height:1.5">提示：本机不会真正 OCR，小根会按「二次根式」作业帮你勾好常见知识点，你再确认哪些不会 / 做错啦。</p></div>
+ <div class="card"><h2>📁 我的试卷 ${list.length?`(${list.length})`:''}</h2>
+ ${list.length?list.map(sh=>`<button class="sheet-item" onclick="viewSheet('${sh.id}')"><img class="sheet-thumb" src="${sh.thumb||sh.data}" alt=""><div class="sp"><b>${sh.date}</b><div class="sub">${(sh.topics||[]).map(t=>LV[t-1]?LV[t-1].short:'').filter(Boolean).join(' · ')||'未标记知识点'}</div>${sh.note?`<div class="sub" style="margin-top:2px">📝 ${esc(sh.note).slice(0,40)}</div>`:''}</div></button>`).join(''):'<div class="sub">还没有导入过试卷，拍一张试试吧～</div>'}
+ </div>
+ <button class="btn ghost block" onclick="go('home')">← 返回首页</button>`;}
+function esc(t){return String(t||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function onSheetFile(ev){const f=ev.target.files&&ev.target.files[0];if(!f)return;if(!f.type.startsWith('image/')){toast('请选择图片哦');return;}
+ const rd=new FileReader();rd.onload=()=>compressSheet(rd.result);rd.readAsDataURL(f);ev.target.value='';}
+function compressSheet(dataUrl){const img=new Image();img.onload=()=>{const max=900;let w=img.width,h=img.height;if(w>max){h=Math.round(h*max/w);w=max;}
+  const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+  const full=c.toDataURL('image/jpeg',0.72);const tw=180,th=Math.round(h*tw/w);const c2=document.createElement('canvas');c2.width=tw;c2.height=th;c2.getContext('2d').drawImage(img,0,0,tw,th);
+  impUI.preview=full;impUI.thumb=c2.toDataURL('image/jpeg',0.6);impUI.note='';impUI.topics={};SHEET_PRE.forEach(n=>impUI.topics[n]=true);impUI.step='scan';render();
+  setTimeout(()=>{impUI.step='result';render();window.scrollTo(0,0);},1200+Math.random()*300);};
+ img.onerror=()=>toast('图片打不开，换一张试试～');img.src=dataUrl;}
+function vImpScan(){return `${topBar()}<div class="card scan">${mascot('think',90)}<div class="eye">👀</div><h2>小根正在看你的试卷…</h2><div class="sub">对照二次根式知识点中</div><div class="bar"><i></i></div>
+ ${impUI.preview?`<img class="prevw" style="margin-top:16px;max-height:160px" src="${impUI.preview}" alt="预览">`:''}</div>`;}
+function vImpResult(){const topics=ALL8.map(n=>{const on=!!impUI.topics[n];return `<button type="button" class="tgl ${on?'on':''}" onclick="toggleTopic(${n})"><span class="ck">${on?'✓':''}</span><span>${LV[n-1].icon} ${LV[n-1].name}</span></button>`;}).join('');
+ return `${topBar()}<div class="ptitle">✨ 识别结果</div>
+ <div class="card"><div class="row">${mascot('happy',58)}<div class="sp"><b>小根对照了你的试卷，建议从这些知识点开始练～</b><div class="sub">勾选「我不会 / 做错了」的知识点</div></div></div>
+ ${impUI.preview?`<img class="prevw" style="margin:12px 0" src="${impUI.preview}" alt="试卷预览">`:''}
+ <div style="margin-top:8px">${topics}</div>
+ <div style="margin-top:14px"><b>📝 备注（可选）</b><div class="sub">比如：第 3 题不会、第 5 题做错了</div>
+ <textarea class="note" id="sheetNote" placeholder="这道题我不会 / 这道题做错了…" oninput="impUI.note=this.value">${esc(impUI.note)}</textarea></div>
+ <div class="stack" style="margin-top:14px"><button class="btn pri block" id="confirmImport" onclick="confirmImport()">确认，开始练这些 ✓</button>
+ <button class="btn ghost block" onclick="saveSheetOnly()">先存到试卷本（不练）</button></div></div>`;}
+function saveSheetOnly(){const note=(document.getElementById('sheetNote')||{}).value||impUI.note||'';
+ const picked=ALL8.filter(n=>impUI.topics[n]);
+ const id='sh'+Date.now().toString(36);
+ const sheet={id,date:today(),data:impUI.preview,thumb:impUI.thumb||impUI.preview,topics:picked,note:note.trim(),added:Date.now()};
+ try{S.sheets=S.sheets||[];S.sheets.push(sheet);save();}catch(e){sheet.data=sheet.thumb;try{S.sheets.push(sheet);save();}catch(e2){toast('存储空间不够');return;}}
+ toast('已存入我的试卷 📁');impUI={step:'list',topics:{},note:'',preview:null,thumb:null,viewId:null};render();}
+function toggleTopic(n){impUI.topics[n]=!impUI.topics[n];render();}
+function confirmImport(){const picked=ALL8.filter(n=>impUI.topics[n]);if(!picked.length){toast('至少勾选一个知识点哦');return;}
+ const note=(document.getElementById('sheetNote')||{}).value||impUI.note||'';
+ const id='sh'+Date.now().toString(36);
+ const sheet={id,date:today(),data:impUI.preview,thumb:impUI.thumb||impUI.preview,topics:picked,note:note.trim(),added:Date.now()};
+ try{S.sheets=S.sheets||[];S.sheets.push(sheet);save();}catch(e){// quota: drop full image keep thumb
+  sheet.data=sheet.thumb;try{S.sheets.push(sheet);save();}catch(e2){toast('存储空间不够，试试清掉旧试卷～');return;}}
+ // unlock
+ const set=new Set(S.sheetUnlock||[]);picked.forEach(n=>set.add(n));S.sheetUnlock=[...set];
+ // seed wrong book 1-2 per topic
+ const used=new Set();let seeded=0;
+ picked.forEach(lv=>{const n=1+(Math.random()<.5?1:0);for(let i=0;i<n;i++){const q=genFrom(lv,used);addWrong(q,{fromSheet:true});seeded++;}});
+ save();checkBadges();
+ toast(`已解锁 ${picked.length} 个知识点，错题本 +${seeded} 题 📒`,true);confetti(40);
+ impUI={step:'list',topics:{},note:'',preview:null,thumb:null,viewId:null};go('import');}
+function viewSheet(id){impUI.viewId=id;impUI.step='detail';render();}
+function vImpDetail(){const sh=(S.sheets||[]).find(x=>x.id===impUI.viewId);if(!sh){impUI.step='list';return vImpList();}
+ return `${topBar()}<div class="ptitle">📄 试卷详情</div>
+ <div class="card"><div class="sub">${sh.date}</div>
+ <img class="prevw" style="margin:10px 0" src="${sh.data||sh.thumb}" alt="试卷">
+ <div><b>关联知识点</b></div>
+ <div style="margin:8px 0">${(sh.topics||[]).map(t=>`<span class="pill">${LV[t-1].icon} ${LV[t-1].short}</span>`).join('')||'<span class="sub">无</span>'}</div>
+ ${sh.note?`<div class="hintb"><b>📝 备注</b><br>${esc(sh.note)}</div>`:''}
+ <div class="stack" style="margin-top:14px">
+  <button class="btn pri block" onclick="practiceSheetTopics('${sh.id}')">练这些知识点 ⚔️</button>
+  <button class="btn ghost block" onclick="impUI.step='list';render()">← 返回列表</button>
+  <button class="btn ghost block danger" onclick="deleteSheet('${sh.id}')">删除这份试卷</button>
+ </div></div>`;}
+function practiceSheetTopics(id){const sh=(S.sheets||[]).find(x=>x.id===id);if(!sh||!sh.topics.length)return;
+ const lv=sh.topics.find(n=>lvUnlocked(n))||sh.topics[0];openLevel(lv);}
+function deleteSheet(id){S.sheets=(S.sheets||[]).filter(x=>x.id!==id);save();impUI.step='list';render();toast('已删除');}
+
+
+render();
+</script>
+</body>
+</html>
