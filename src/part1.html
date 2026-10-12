@@ -199,6 +199,23 @@ h2{margin:0 0 10px;font-size:20px}
 .chklist{margin:0;padding:0;list-style:none}
 .chklist li{background:#f8f7fd;border-radius:14px;padding:10px 12px;margin:8px 0;font-weight:700;font-size:15px;line-height:1.6}
 .chklist li b{color:var(--pur)}
+
+/* study timer */
+.live-timer{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.22);border-radius:14px;padding:6px 12px;font-weight:900;font-size:16px;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:.5px;white-space:nowrap}
+.live-timer.pause{opacity:.7}
+.live-timer .dot{width:8px;height:8px;border-radius:50%;background:#4ade80;box-shadow:0 0 0 3px rgba(74,222,128,.35);animation:blink 1.2s infinite}
+.live-timer.pause .dot{background:#ffb067;animation:none;box-shadow:none}
+@keyframes blink{50%{opacity:.35}}
+.timecard{background:linear-gradient(135deg,#fff 0%,#eef9ff 55%,#f5f0ff 100%)}
+.timecard .tbig{font-size:28px;font-weight:900;color:var(--pur);font-variant-numeric:tabular-nums}
+.timecard .tlab{font-size:12px;color:var(--sub);font-weight:700}
+.weekbars{display:flex;align-items:flex-end;gap:6px;height:72px;margin-top:10px}
+.weekbars .wb{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+.weekbars .bar{width:100%;border-radius:8px 8px 4px 4px;background:linear-gradient(180deg,#9b83ff,#4fc3ff);min-height:4px;transition:height .4s}
+.weekbars .bar.on{background:linear-gradient(180deg,#ffd27a,#ff7a59)}
+.weekbars .wd{font-size:11px;font-weight:800;color:var(--sub)}
+.weekbars .wb.td .wd{color:var(--pur)}
+.encourage{background:#e7f9ee;color:#15913f;border-radius:14px;padding:10px 12px;font-weight:800;font-size:15px;margin-top:10px;line-height:1.5}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>

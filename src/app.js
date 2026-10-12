@@ -23,13 +23,16 @@ const BADGES=[
  {id:'boss',e:'👑',n:'本章Boss击败',d:'击败二次根式大魔王'},
  {id:'xp500',e:'💎',n:'经验500',d:'累计获得 500 XP'},
  {id:'q100',e:'📚',n:'百题勇士',d:'累计答题 100 道'},
- {id:'allstar',e:'🌟',n:'满星收集家',d:'8 关全部 3 星'}
+ {id:'allstar',e:'🌟',n:'满星收集家',d:'8 关全部 3 星'},
+ {id:'t30',e:'⏱️',n:'专注半小时',d:'累计学习满 30 分钟'},
+ {id:'t2h',e:'⏳',n:'学习两小时',d:'累计学习满 2 小时'},
+ {id:'focus10',e:'🎯',n:'单次专注10分',d:'单次练习专注满 10 分钟'}
 ];
 
 /* ================= 存档 ================= */
 const KEY='genshi_chuangguan_v1';
-const DEF={v:1,xp:0,levels:{},boss:{passed:false,best:0,stars:0},wrong:[],sessionNo:0,checkins:[],badges:{},kp:{},tot:{ans:0,cor:0},maxCombo:0,sound:false,lessonSeen:{},sheets:[],sheetUnlock:[]};
-function load(){try{const raw=JSON.parse(localStorage.getItem(KEY)||'null');const o=Object.assign(JSON.parse(JSON.stringify(DEF)),raw||{});if(!o.lessonSeen)o.lessonSeen={};if(!o.sheets)o.sheets=[];if(!o.sheetUnlock)o.sheetUnlock=[];return o;}catch(e){return JSON.parse(JSON.stringify(DEF));}}
+const DEF={v:1,xp:0,levels:{},boss:{passed:false,best:0,stars:0},wrong:[],sessionNo:0,checkins:[],badges:{},kp:{},tot:{ans:0,cor:0},maxCombo:0,sound:false,lessonSeen:{},sheets:[],sheetUnlock:[],study:{todayMs:0,todayDate:'',byDate:{},totalMs:0,longestSessionMs:0,sessionsCount:0}};
+function load(){try{const raw=JSON.parse(localStorage.getItem(KEY)||'null');const o=Object.assign(JSON.parse(JSON.stringify(DEF)),raw||{});if(!o.lessonSeen)o.lessonSeen={};if(!o.sheets)o.sheets=[];if(!o.sheetUnlock)o.sheetUnlock=[];o.study=Object.assign(JSON.parse(JSON.stringify(DEF.study)),o.study||{});if(!o.study.byDate)o.study.byDate={};return o;}catch(e){return JSON.parse(JSON.stringify(DEF));}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 let S=load();
 function ds(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');}
@@ -45,6 +48,56 @@ function curLevel(){for(let n=1;n<=8;n++)if(!lvPassed(n))return n;return 0;}
 const activeWrong=()=>S.wrong.filter(w=>!w.mastered);
 const dueWrong=()=>{const t=today();return S.wrong.filter(w=>!w.mastered&&w.due<=t&&w.after<=S.sessionNo);};
 
+/* ================= 学习计时 ================= */
+let studyClock={running:false,paused:false,sessionMs:0,tickAt:0,flushAt:0,raf:0};
+function ensureStudyDay(){const t=today();if(!S.study)S.study=JSON.parse(JSON.stringify(DEF.study));
+ if(S.study.todayDate!==t){S.study.todayDate=t;S.study.todayMs=S.study.byDate[t]||0;}}
+function fmtDur(ms){ms=Math.max(0,Math.floor(ms/1000));const h=Math.floor(ms/3600),m=Math.floor((ms%3600)/60),sec=ms%60;
+ const p=n=>String(n).padStart(2,'0');return h>0?`${h}:${p(m)}:${p(sec)}`:`${p(m)}:${p(sec)}`;}
+function fmtDurCN(ms){ms=Math.max(0,Math.floor(ms/1000));const h=Math.floor(ms/3600),m=Math.floor((ms%3600)/60),sec=ms%60;
+ if(h>0)return `${h} 小时 ${m} 分`;if(m>0)return `${m} 分 ${sec} 秒`;return `${sec} 秒`;}
+function studyAccrue(now){if(!studyClock.running||studyClock.paused||!studyClock.tickAt)return;
+ const d=Math.max(0,now-studyClock.tickAt);if(!d)return;studyClock.tickAt=now;studyClock.sessionMs+=d;
+ ensureStudyDay();const t=today();S.study.todayMs=(S.study.todayMs||0)+d;S.study.byDate[t]=(S.study.byDate[t]||0)+d;S.study.totalMs=(S.study.totalMs||0)+d;}
+function studyFlush(force){const now=Date.now();studyAccrue(now);if(!force&&now-studyClock.flushAt<4500)return;studyClock.flushAt=now;save();}
+function updateTimerUI(){const el=document.getElementById('liveTimer');if(!el)return;
+ el.querySelector('.tval').textContent=fmtDur(studyClock.sessionMs);el.classList.toggle('pause',studyClock.paused);}
+function studyTick(){if(!studyClock.running)return;studyAccrue(Date.now());updateTimerUI();
+ if(Date.now()-studyClock.flushAt>=5000)studyFlush(true);
+ studyClock.raf=requestAnimationFrame(studyTick);}
+function startStudyTimer(){ensureStudyDay();studyClock.running=true;studyClock.paused=document.hidden;studyClock.sessionMs=0;studyClock.tickAt=Date.now();studyClock.flushAt=Date.now();
+ if(studyClock.raf)cancelAnimationFrame(studyClock.raf);studyClock.raf=requestAnimationFrame(studyTick);}
+function stopStudyTimer(){if(!studyClock.running)return;studyFlush(true);
+ const sessMs=studyClock.sessionMs;S.study.longestSessionMs=Math.max(S.study.longestSessionMs||0,sessMs);
+ if(sessMs>=3000){S.study.sessionsCount=(S.study.sessionsCount||0)+1;}
+ studyClock.running=false;studyClock.paused=false;studyClock.tickAt=0;if(studyClock.raf){cancelAnimationFrame(studyClock.raf);studyClock.raf=0;}
+ save();checkBadges();}
+function pauseStudyTimer(){if(!studyClock.running||studyClock.paused)return;studyAccrue(Date.now());studyClock.paused=true;studyClock.tickAt=0;studyFlush(true);updateTimerUI();}
+function resumeStudyTimer(){if(!studyClock.running||!studyClock.paused)return;if(document.hidden)return;studyClock.paused=false;studyClock.tickAt=Date.now();updateTimerUI();}
+document.addEventListener('visibilitychange',()=>{if(!studyClock.running)return;if(document.hidden)pauseStudyTimer();else if(view==='quiz'&&sess&&!sess.showLesson)resumeStudyTimer();});
+window.addEventListener('pagehide',()=>studyFlush(true));
+window.addEventListener('beforeunload',()=>studyFlush(true));
+function studyDaysStreak(){ensureStudyDay();const bd=S.study.byDate||{};let d=today();if(!(bd[d]>0))d=addDays(d,-1);let c=0;while((bd[d]||0)>0){c++;d=addDays(d,-1);}return c;}
+function weekStudyBars(){ensureStudyDay();const labels=['日','一','二','三','四','五','六'];const now=new Date();const t=today();
+ const days=[];for(let i=6;i>=0;i--){const dt=new Date(now.getFullYear(),now.getMonth(),now.getDate()-i);days.push(ds(dt));}
+ const vals=days.map(d=>S.study.byDate[d]||0);const mx=Math.max(5*60*1000,...vals);
+ return `<div class="weekbars">${days.map((d,i)=>{const h=Math.max(4,Math.round((vals[i]/mx)*56));const wd=labels[new Date(d+'T12:00:00').getDay()];
+  return `<div class="wb ${d===t?'td':''}" title="${d} ${fmtDurCN(vals[i])}"><div class="bar ${vals[i]>0?'on':''}" style="height:${vals[i]?h:4}px"></div><div class="wd">${wd}</div></div>`;}).join('')}</div>`;}
+function studyEncourage(){ensureStudyDay();const todayMs=S.study.todayMs||0;const dsSt=studyDaysStreak();
+ if(todayMs>=15*60*1000)return '🌟 今天练了好久，小根为你骄傲！';
+ if(todayMs>=5*60*1000)return '💪 今天很棒！已经专注学习 5 分钟以上啦～';
+ if(todayMs>=60*1000)return '✨ 开了个好头，再练一会儿就更稳了！';
+ if(dsSt>=3)return `🔥 已经连续 ${dsSt} 天有学习记录，保持火苗！`;
+ if((S.study.totalMs||0)>0)return '🌱 每天一点点，根号会越来越乖的。';
+ return '⏱️ 开始答题后会自动计时，首页能看到你的努力～';}
+function studyCardHtml(){ensureStudyDay();const tMs=S.study.todayMs||0,tot=S.study.totalMs||0;
+ return `<div class="card timecard" id="studyCard"><div class="row"><div style="font-size:34px">⏱️</div><div class="sp"><div style="font-size:18px;font-weight:900">学习时长</div><div class="sub">只在答题时计时 · 切到后台会暂停</div></div></div>
+ <div class="row" style="margin-top:12px;gap:16px"><div class="sp center"><div class="tbig" id="homeTodayDur">${fmtDur(tMs)}</div><div class="tlab">今日学习</div></div>
+ <div class="sp center"><div class="tbig">${fmtDur(tot)}</div><div class="tlab">累计学习</div></div></div>
+ <div class="sub" style="margin-top:12px;font-weight:800">本周学习</div>${weekStudyBars()}
+ <div class="encourage">${studyEncourage()}</div>
+ ${(S.study.sessionsCount||0)?`<div class="sub" style="margin-top:8px">练习 ${S.study.sessionsCount} 次 · 最长一次 ${fmtDurCN(S.study.longestSessionMs||0)}</div>`:''}</div>`;}
+
 /* ================= 声音 / 特效 ================= */
 let AC=null;
 function beep(type){if(!S.sound)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const ns=type==='ok'?[523,659,784]:type==='win'?[523,659,784,1047,1319]:[392,349];const t0=AC.currentTime;
@@ -57,9 +110,10 @@ function floatTxt(t){const d=document.createElement('div');d.className='xpf';d.t
 function toast(t,gold){const d=document.createElement('div');d.className='toast'+(gold?' gold':'');d.innerHTML=t;document.getElementById('toasts').appendChild(d);setTimeout(()=>d.remove(),3200);}
 function addXP(n){const b=lvInfo(S.xp).L;S.xp+=n;const a=lvInfo(S.xp);if(a.L>b){setTimeout(()=>{toast(`🎉 升级啦！Lv.${a.L}「${a.title}」`,true);confetti(50);beep('win');},500);}}
 function checkBadges(){const st=streak();const L=S.levels;const res=[];
+ const stuy=S.study||DEF.study;
  const cond={first:S.checkins.length>0,s3:st>=3,s7:st>=7,pass1:Object.values(L).some(x=>x.passed),star3:Object.values(L).some(x=>x.stars>=3),combo5:S.maxCombo>=5,
   clear:S.wrong.some(w=>w.mastered)&&activeWrong().length===0,all:allPassed(),boss:S.boss.passed,xp500:S.xp>=500,q100:S.tot.ans>=100,
-  allstar:ALL8.every(n=>L[n]&&L[n].stars>=3)};
+  allstar:ALL8.every(n=>L[n]&&L[n].stars>=3),t30:(stuy.totalMs||0)>=30*60*1000,t2h:(stuy.totalMs||0)>=2*60*60*1000,focus10:(stuy.longestSessionMs||0)>=10*60*1000};
  BADGES.forEach(b=>{if(cond[b.id]&&!S.badges[b.id]){S.badges[b.id]=today();res.push(b);}});
  res.forEach((b,i)=>setTimeout(()=>{toast(`${b.e} 获得新徽章：${b.n}！`,true);beep('win');},900+i*700));
  if(res.length)save();return res;}
@@ -98,7 +152,7 @@ function beginQuiz(mode,lv){let qs;
  else if(mode==='review')qs=shuffle(dueWrong()).slice(0,10).map(w=>({q:w.q,sr:w.id}));
  else{const due=shuffle(dueWrong()).slice(0,3).map(w=>({q:w.q,sr:w.id}));const L=curLevel()||rnd(1,8);const used=new Set(due.map(d=>d.q.id));
   const fresh=genLevel(L,5).filter(x=>!used.has(x.q.id));qs=due.concat(fresh).slice(0,5);while(qs.length<5)qs.push({q:genFrom(rnd(1,8),used)});}
- sess={mode,lv,qs,i:0,correct:0,combo:0,usedHint:false,xp:0,locked:false,hint:false,choice:-1};pendingSess=null;closeModal();go('quiz');}
+ sess={mode,lv,qs,i:0,correct:0,combo:0,usedHint:false,xp:0,locked:false,hint:false,choice:-1};pendingSess=null;closeModal();startStudyTimer();go('quiz');}
 function cur(){return sess.qs[sess.i];}
 function pickOpt(j){if(!sess||sess.locked)return;sess.choice=j;judge(j===cur().q.answer);}
 function normNum(s){s=String(s).trim().replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-65248)).replace(/[．。]/g,'.').replace(/[−－—]/g,'-').replace(/\s/g,'');
@@ -139,7 +193,7 @@ function hideSheet(){document.getElementById('sheet').classList.remove('show');}
 function nextQ(){if(!sess)return;hideSheet();sess.i++;sess.locked=false;sess.hint=false;sess.choice=-1;if(sess.i>=sess.qs.length)finish();else{render();window.scrollTo(0,0);}}
 function useHint(){sess.hint=true;sess.usedHint=true;render();}
 function quitQuiz(){modal(`<div class="center">${mascot('normal',70)}<h2>要先休息一下吗？</h2><p class="sub">已经答过的题会记录下来，但这一轮不算完成哦。</p></div>
- <div class="stack"><button class="btn pur block" onclick="closeModal()">继续答题 💪</button><button class="btn ghost block" onclick="closeModal();hideSheet();sess=null;go('home')">先休息一下</button></div>`);}
+ <div class="stack"><button class="btn pur block" onclick="closeModal()">继续答题 💪</button><button class="btn ghost block" onclick="closeModal();hideSheet();stopStudyTimer();sess=null;go('home')">先休息一下</button></div>`);}
 function finish(){const s=sess;const tot=s.qs.length,c=s.correct;const r={mode:s.mode,lv:s.lv,c,tot,xp:s.xp,stars:0,pass:false};
  if(s.mode==='level'||s.mode==='boss'){const need=s.mode==='boss'?8:4;r.pass=c>=need;r.need=need;
   if(r.pass)r.stars=1+(c===tot?1:0)+(s.usedHint?0:1);
@@ -149,7 +203,7 @@ function finish(){const s=sess;const tot=s.qs.length,c=s.correct;const r={mode:s
   if(r.pass){const b=30+r.stars*10+(s.mode==='boss'?100:0);addXP(b);r.xp+=b;}}
  if(s.mode==='daily'){const t=today();if(!S.checkins.includes(t)){S.checkins.push(t);r.checkin=true;addXP(30);r.xp+=30;}}
  r.mastered=s.qs.filter(x=>x.mastered).length;
- save();checkBadges();lastRes=r;sess=null;go('result');
+ r.studyMs=studyClock.sessionMs;stopStudyTimer();save();checkBadges();lastRes=r;sess=null;go('result');
  if(r.pass||r.checkin){confetti(90);beep('win');}}
 
 /* ================= 视图 ================= */
@@ -165,6 +219,7 @@ function greet(){const st=streak(),done=S.checkins.includes(today());if(done)ret
  if(st>0)return `已经连续 ${st} 天啦！今天也来点燃火苗吧 🔥`;if(S.tot.ans===0)return '嗨！我是小根～每天 5 道题，我们一起慢慢变强！';return '欢迎回来！今天只要 5 道题，5 分钟就能搞定～';}
 function vHome(){const done=S.checkins.includes(today());const due=dueWrong().length;const cl=curLevel();const nrev=Math.min(due,3);const np=ALL8.filter(lvPassed).length;
  return `${topBar()}<div class="hero">${mascot('happy',78)}<div class="bub">${greet()}</div></div>
+ ${studyCardHtml()}
  <div class="card daily"><div class="row"><div class="sp"><div class="sub">每日打卡</div><div class="big">${done?'今日任务已完成 ✅':'今日任务：5 道题'}</div></div><div style="font-size:42px">${done?'🏅':'🎯'}</div></div>
  <div style="margin:8px 0 12px">${nrev?`<span class="pill o">🔁 复习错题 ${nrev} 题</span>`:''}<span class="pill">✨ 新题 ${5-nrev} 题</span><span class="pill g">⏱️ 约 5 分钟</span></div>
  <button class="btn ${done?'pur':'pri'} block" id="dailyBtn" onclick="startSession('daily')">${done?'再练一组 💪':'开始今日挑战 🚀'}</button></div>
@@ -205,14 +260,14 @@ function vQuiz(){const it=cur(),q=it.q;const info=LV[q.kp-1];
   return `<button class="opt ${c}" ${sess.locked?'disabled':''} onclick="pickOpt(${j})"><span class="ol">${'ABCD'[j]}</span><span class="ot">${o}</span></button>`;}).join('')}</div>`;}
  else{body=`<div class="card" style="padding:14px"><div class="sub" style="margin:0 0 8px">✍️ 填一个数（可以写小数）</div><div class="fill"><input id="fin" type="text" inputmode="decimal" autocomplete="off" placeholder="?" ${sess.locked?'disabled':''} value="${sess.locked?String(sess.fillVal).replace(/["<>&]/g,''):''}" onkeydown="if(event.key==='Enter')submitFill()">
   <button class="btn pri" style="min-width:96px" onclick="submitFill()" ${sess.locked?'disabled':''}>确定</button></div></div>`;}
- return `<div class="qtop"><button class="iconbtn" onclick="quitQuiz()" aria-label="退出">✕</button><div class="dots">${dots}</div>${sess.combo>=2?`<div class="combo ${sess.locked&&sess.last?'pop':''}">⚡×${sess.combo}</div>`:`<div style="min-width:46px;text-align:center;font-weight:900">${sess.i+1}/${sess.qs.length}</div>`}</div>
- <div style="color:#fff;font-weight:800;margin:10px 4px 0">${title}</div>
+ return `<div class="qtop"><button class="iconbtn" onclick="quitQuiz()" aria-label="退出">✕</button><div class="dots">${dots}</div><div class="live-timer ${studyClock.paused?'pause':''}" id="liveTimer" title="本局学习计时"><span class="dot"></span><span class="tval">${fmtDur(studyClock.sessionMs)}</span></div></div>
+ <div class="row" style="color:#fff;font-weight:800;margin:10px 4px 0"><div class="sp">${title}</div>${sess.combo>=2?`<div class="combo ${sess.locked&&sess.last?'pop':''}">⚡×${sess.combo}</div>`:`<div style="opacity:.9">${sess.i+1}/${sess.qs.length}</div>`}</div>
  <div class="card qcard"><span class="qtag">${info.icon} ${info.name}</span>${it.sr?'<span class="qtag rev">🔁 错题复习</span>':''}
  <div class="stem">${q.stem}</div>${sess.hint?`<div class="hintb">💡 ${q.hint}</div>`:''}</div>
  ${body}
  <div class="qbar" style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">${!sess.locked&&!sess.hint?`<button class="btn ghost" style="flex:1;background:rgba(255,255,255,.85)" onclick="useHint()">💡 给我一点提示</button>`:''}${(sess.mode==='level'||sess.mode==='boss')?`<button class="btn ghost" style="flex:1;background:rgba(255,255,255,.85)" onclick="reopenLesson()">📖 再看一遍公式</button>`:''}</div>`;}
 function vResult(){const r=lastRes;if(!r)return vHome();let head,body='';
- const xpL=`<div class="pill" style="font-size:16px">+${r.xp} XP</div>`;
+ const xpL=`<div class="pill" style="font-size:16px">+${r.xp} XP</div>${r.studyMs?`<div class="pill g" style="font-size:16px">⏱️ 本局 ${fmtDur(r.studyMs)}</div>`:''}`;
  if(r.mode==='level'||r.mode==='boss'){
   if(r.pass){head=`${mascot('happy',90)}<h2 style="font-size:26px">${r.mode==='boss'?'Boss 被你打败啦！👑':'闯关成功！'}</h2><div class="bigstars">${stars3(r.stars)}</div>`;
    body=`<div class="score">${r.c} / ${r.tot}</div>${xpL}${r.first&&r.mode==='level'&&r.lv<8?`<p><b>🔓 第 ${r.lv+1} 关已解锁！</b></p>`:''}${r.first&&r.mode==='level'&&r.lv===8?'<p><b>🔓 Boss 关已解锁！</b></p>':''}${r.stars<3?`<p class="sub">${r.c<r.tot?'全部答对可以多拿一颗星':'不用提示也全对，就能拿 3 星'} ⭐</p>`:''}`;}
@@ -251,7 +306,7 @@ function openSettings(){modal(`<h2>⚙️ 设置</h2>
  <div class="stack"><button class="btn pur block" onclick="closeModal()">好的</button><button class="btn ghost block danger" id="resetBtn" style="font-size:15px" onclick="confirmReset()">重置全部进度…</button></div>`);}
 function confirmReset(){modal(`<div class="center"><div style="font-size:50px">⚠️</div><h2>确定要重置吗？</h2><p class="sub">XP、星星、徽章、打卡记录、错题本都会被清空，而且<b>不能恢复</b>。</p></div>
  <div class="stack"><button class="btn ghost block" onclick="openSettings()">不了，返回</button><button class="btn block" id="resetYes" style="background:#e5484d;color:#fff;box-shadow:0 5px 0 #a8262b" onclick="doReset()">确定清空</button></div>`);}
-function doReset(){localStorage.removeItem(KEY);S=load();sess=null;closeModal();go('home');toast('进度已重置，重新出发吧！🌱');}
+function doReset(){stopStudyTimer();localStorage.removeItem(KEY);S=load();sess=null;pendingSess=null;closeModal();go('home');toast('进度已重置，重新出发吧！🌱');}
 
 /* ================= 课前小课堂 ================= */
 const LESSONS={
@@ -313,9 +368,9 @@ function vLesson(){const ps=pendingSess||(sess&&sess.showLesson?{mode:sess.mode,
 function finishLesson(skipOnly){if(!pendingSess)return;const lid=lessonId(pendingSess.mode,pendingSess.lv);
  if(!skipOnly||!S.lessonSeen[lid]){S.lessonSeen[lid]=true;save();}
  const {mode,lv}=pendingSess;beginQuiz(mode,lv);}
-function cancelLesson(){if(sess&&sess.showLesson){sess.showLesson=false;go('quiz');return;}pendingSess=null;go('map');}
-function reopenLesson(){if(!sess)return;sess.showLesson=true;pendingSess={mode:sess.mode,lv:sess.lv,fromQuiz:true};go('lesson');}
-function closeLessonReview(){if(sess)sess.showLesson=false;pendingSess=null;go('quiz');}
+function cancelLesson(){if(sess&&sess.showLesson){sess.showLesson=false;go('quiz');resumeStudyTimer();return;}pendingSess=null;go('map');}
+function reopenLesson(){if(!sess)return;pauseStudyTimer();sess.showLesson=true;pendingSess={mode:sess.mode,lv:sess.lv,fromQuiz:true};go('lesson');}
+function closeLessonReview(){if(sess)sess.showLesson=false;pendingSess=null;go('quiz');resumeStudyTimer();}
 
 /* ================= 导入试卷 ================= */
 const SHEET_PRE=[2,3,4,5,6,7,8]; // 对照作业预勾选
@@ -392,4 +447,5 @@ function practiceSheetTopics(id){const sh=(S.sheets||[]).find(x=>x.id===id);if(!
 function deleteSheet(id){S.sheets=(S.sheets||[]).filter(x=>x.id!==id);save();impUI.step='list';render();toast('已删除');}
 
 
+ensureStudyDay();
 render();
