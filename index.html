@@ -830,6 +830,7 @@ function greet(){const st=streak(),done=S.checkins.includes(today());if(done)ret
 function vHome(){const done=S.checkins.includes(today());const due=dueWrong().length;const cl=curLevel();const nrev=Math.min(due,3);const np=ALL8.filter(lvPassed).length;
  return `${topBar()}<div class="hero">${mascot('happy',78)}<div class="bub">${greet()}</div></div>
  ${studyCardHtml()}
+ <a class="card" href="./yiyuan-erci-fangcheng.html" style="display:block;color:inherit;text-decoration:none;border:2px solid #d9d1ff;background:linear-gradient(135deg,#fff,#f5f1ff)"><div class="row"><div style="font-size:40px">🧩</div><div class="sp"><div class="big" style="font-size:20px;font-weight:900">一元二次方程 · 新章节</div><div class="sub">从认识标准形式到解方程，8 个小关卡，循序渐进练习</div></div><div style="font-size:22px">›</div></div></a>
  <div class="card daily"><div class="row"><div class="sp"><div class="sub">每日打卡</div><div class="big">${done?'今日任务已完成 ✅':'今日任务：5 道题'}</div></div><div style="font-size:42px">${done?'🏅':'🎯'}</div></div>
  <div style="margin:8px 0 12px">${nrev?`<span class="pill o">🔁 复习错题 ${nrev} 题</span>`:''}<span class="pill">✨ 新题 ${5-nrev} 题</span><span class="pill g">⏱️ 约 5 分钟</span></div>
  <button class="btn ${done?'pur':'pri'} block" id="dailyBtn" onclick="startSession('daily')">${done?'再练一组 💪':'开始今日挑战 🚀'}</button></div>
