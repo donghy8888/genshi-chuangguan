@@ -36,7 +36,4 @@ function shouldAddVariant(item, attempts) {
   const median = history.length % 2 ? history[mid] : (history[mid-1] + history[mid]) / 2;
   return median > 0 && item.firstTimeMs > median * 1.5;
 }
-if (typeof module !== "undefined" && module.exports) {
-  officialQuizScore.shouldAddVariant = shouldAddVariant;
-  module.exports = officialQuizScore;
-}
+if (typeof module !== "undefined" && module.exports) module.exports = Object.assign(officialQuizScore, { shouldAddVariant });
