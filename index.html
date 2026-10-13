@@ -232,6 +232,132 @@ h2{margin:0 0 10px;font-size:20px}
 <div id="toasts"></div>
 <script>
 "use strict";
+/**
+ * Score only official questions from their first attempt.
+ * Supplemental variant exercises and retry attempts never change the official score.
+ */
+function officialQuizScore(qs) {
+  const official = qs.filter(item => !item.isVariant);
+  return {
+    tot: official.length,
+    c: official.filter(item => item.firstRes === 1).length
+  };
+}
+
+/**
+ * Offer a follow-up variant after a successful retry, hint-assisted success,
+ * or unusually slow success relative to the learner's own recent baseline.
+ * Speed is never a penalty; it only helps decide whether extra practice may help.
+ */
+function shouldAddVariant(item, attempts) {
+  if (!item || item.isVariant) return false;
+  if (item.retryStage === 1 && item.res === 1) return true;
+  if (item.firstRes !== 1) return false;
+  if (item.hintUsed) return true;
+  if (!(item.firstTimeMs > 0)) return false;
+  const history = (attempts || []).filter(a =>
+    a !== item.attemptLog &&
+    !a.variant &&
+    a.kp === item.q.kp &&
+    a.questionType === item.q.type &&
+    a.firstCorrect &&
+    !a.hintUsed &&
+    a.firstTimeMs > 0
+  ).slice(-20).map(a => a.firstTimeMs).sort((a,b) => a-b);
+  if (history.length < 5) return false;
+  const mid = Math.floor(history.length / 2);
+  const median = history.length % 2 ? history[mid] : (history[mid-1] + history[mid]) / 2;
+  return median > 0 && item.firstTimeMs > median * 1.5;
+}
+/**
+ * Recommend the earliest skill that needs evidence or reinforcement.
+ * This intentionally follows prerequisite order instead of chasing the lowest percentage.
+ */
+function recommendSkill(histories) {
+  const skills = Array.isArray(histories) ? histories : [];
+  for (let i = 0; i < 8; i++) {
+    const snapshot = skillSnapshot(skills[i] || []);
+    if (snapshot.count < 3) return { level: i + 1, reason: "先补足基础练习样本", ...snapshot };
+    if (snapshot.percent < 60) return { level: i + 1, reason: "近期正确率偏低，建议优先巩固", ...snapshot };
+  }
+  for (let i = 0; i < 8; i++) {
+    const snapshot = skillSnapshot(skills[i] || []);
+    if (snapshot.percent < 80) return { level: i + 1, reason: "再练几题，确认是否稳定掌握", ...snapshot };
+  }
+  return { level: null, reason: "目前各知识点表现稳定，可尝试综合挑战", count: 0, percent: 100, status: "继续挑战" };
+}
+const SKILL_LABELS = {
+  "1-square-root":"正数开平方", "1-decimal-fraction":"小数与分数开平方", "1-arithmetic-root":"算术平方根与平方",
+  "2-radicand":"被开方数非负条件", "2-denominator":"分母不为零", "2-combined":"多个条件同时满足",
+  "3-absolute-value":"平方根与绝对值", "3-sign":"根据正负号去绝对值", "3-expression":"含字母根式化简",
+  "4-factor":"提取平方因数", "4-fraction":"分数与小数根式化简", "4-rationalize":"分母有理化",
+  "5-simplest":"判断最简二次根式", "6-like-radicals":"识别同类二次根式",
+  "7-add-subtract":"合并同类二次根式", "8-multiply-divide":"根式乘除", "8-equation":"根式相关方程", "8-rationalize":"分母有理化"
+};
+function classifyQuestion(q) {
+  // Explicit author-assigned tags always win over text heuristics.
+  if (q && typeof q.skillId === "string" && q.skillId && q.skillId !== "unknown") {
+    return { id: q.skillId, label: q.skillLabel || SKILL_LABELS[q.skillId] || "自定义技能" };
+  }
+  const level = Number(q && q.kp) || 0;
+  const source = [q && q.stem, q && q.hint, ...((q && q.steps) || [])].join(" ").replace(/<[^>]*>/g, " ");
+  let key = "";
+  if (level === 1) key = /算术平方根/.test(source) ? "arithmetic-root" : /小数|分数|\.\d/.test(source) ? "decimal-fraction" : "square-root";
+  else if (level === 2) key = /同时|两个根号|两个条件|分母|分式/.test(source) ? (/分母|分母不能为 0/.test(source) ? "denominator" : "combined") : "radicand";
+  else if (level === 3) key = /a³b|ab³|移进根号|含字母|化简/.test(source) ? "expression" : /正负|x &lt;|x &gt;|a &lt;|b &lt;/.test(source) ? "sign" : "absolute-value";
+  else if (level === 4) key = /分母|有理化/.test(source) ? "rationalize" : /小数|分数/.test(source) ? "fraction" : "factor";
+  else if (level === 5) key = "simplest";
+  else if (level === 6) key = "like-radicals";
+  else if (level === 7) key = "add-subtract";
+  else if (level === 8) key = /方程|解方程/.test(source) ? "equation" : /分母|有理化/.test(source) ? "rationalize" : "multiply-divide";
+  else return { id: "unknown", label: "待识别技能" };
+  const id = level + "-" + key;
+  return { id, label: SKILL_LABELS[id] || "基础技能" };
+}
+const SKILL_PREREQUISITES = {
+  "2-radicand": ["1-square-root"],
+  "2-combined": ["1-square-root", "2-radicand"],
+  "3-absolute-value": ["1-arithmetic-root"],
+  "3-sign": ["1-arithmetic-root", "2-radicand"],
+  "3-expression": ["1-arithmetic-root", "2-radicand"],
+  "4-factor": ["1-square-root"],
+  "4-fraction": ["1-decimal-fraction"],
+  "4-rationalize": ["1-square-root", "2-denominator"],
+  "5-simplest": ["1-square-root", "4-factor"],
+  "6-like-radicals": ["4-factor", "5-simplest"],
+  "7-add-subtract": ["5-simplest", "6-like-radicals"],
+  "8-multiply-divide": ["4-factor", "6-like-radicals"],
+  "8-equation": ["2-radicand", "7-add-subtract"],
+  "8-rationalize": ["4-rationalize", "6-like-radicals"]
+};
+function getSkillPlan(skillId) {
+  const current = { id: skillId, label: SKILL_LABELS[skillId] || "基础技能" };
+  const prerequisites = (SKILL_PREREQUISITES[skillId] || []).map(id => {
+    const level = Number(id.split("-")[0]);
+    return { id, level, label: SKILL_LABELS[id] || "基础技能" };
+  });
+  return { current, prerequisites, firstLevel: prerequisites.length ? prerequisites[0].level : Number(String(skillId).split("-")[0]) || 1 };
+}
+function recommendSubskill(attempts) {
+  const list = Array.isArray(attempts) ? attempts : [];
+  const groups = new Map();
+  for (const a of list) {
+    if (!a || !a.skillId || a.variant || a.firstCorrect === undefined) continue;
+    if (!groups.has(a.skillId)) groups.set(a.skillId, { id: a.skillId, label: a.skillLabel || SKILL_LABELS[a.skillId] || "基础技能", total: 0, correct: 0, latest: 0 });
+    const g = groups.get(a.skillId); g.total++; if (a.firstCorrect) g.correct++; g.latest = Math.max(g.latest, Number(a.timestamp) || 0);
+  }
+  const ranked = [...groups.values()].filter(g => g.total >= 3).map(g => ({ ...g, percent: Math.round(g.correct / g.total * 100) }))
+    .filter(g => g.percent < 70).sort((a,b) => a.percent-b.percent || b.total-a.total || b.latest-a.latest);
+  return ranked[0] || null;
+}
+function skillSnapshot(history) {
+  const values = Array.isArray(history) ? history.filter(v => v === 0 || v === 1) : [];
+  const count = values.length;
+  const percent = count ? Math.round(values.reduce((sum, value) => sum + value, 0) / count * 100) : 0;
+  const status = !count ? "未练习" : count < 3 ? "样本较少" : percent < 60 ? "优先巩固" : percent < 80 ? "继续练习" : "暂时掌握较好";
+  return { count, percent, status };
+}
+"use strict";
 /* ================= 数学排版 ================= */
 const SQ='<span class="rs"><svg viewBox="0 0 10 20" preserveAspectRatio="none"><path d="M0.5 11.5 L2.6 10.4 L5.4 19 L9.6 0.5 L10.5 0.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg></span>';
 const R=x=>`<span class="rad">${SQ}<span class="ri">${x}</span></span>`;
@@ -487,8 +613,8 @@ const BADGES=[
 
 /* ================= 存档 ================= */
 const KEY='genshi_chuangguan_v1';
-const DEF={v:1,xp:0,levels:{},boss:{passed:false,best:0,stars:0},wrong:[],sessionNo:0,checkins:[],badges:{},kp:{},tot:{ans:0,cor:0},maxCombo:0,sound:false,lessonSeen:{},sheets:[],sheetUnlock:[],study:{todayMs:0,todayDate:'',byDate:{},totalMs:0,longestSessionMs:0,sessionsCount:0}};
-function load(){try{const raw=JSON.parse(localStorage.getItem(KEY)||'null');const o=Object.assign(JSON.parse(JSON.stringify(DEF)),raw||{});if(!o.lessonSeen)o.lessonSeen={};if(!o.sheets)o.sheets=[];if(!o.sheetUnlock)o.sheetUnlock=[];o.study=Object.assign(JSON.parse(JSON.stringify(DEF.study)),o.study||{});if(!o.study.byDate)o.study.byDate={};return o;}catch(e){return JSON.parse(JSON.stringify(DEF));}}
+const DEF={v:1,xp:0,levels:{},boss:{passed:false,best:0,stars:0},wrong:[],sessionNo:0,checkins:[],badges:{},kp:{},tot:{ans:0,cor:0},maxCombo:0,sound:false,lessonSeen:{},sheets:[],sheetUnlock:[],attempts:[],study:{todayMs:0,todayDate:'',byDate:{},totalMs:0,longestSessionMs:0,sessionsCount:0}};
+function load(){try{const raw=JSON.parse(localStorage.getItem(KEY)||'null');const o=Object.assign(JSON.parse(JSON.stringify(DEF)),raw||{});if(!o.lessonSeen)o.lessonSeen={};if(!o.sheets)o.sheets=[];if(!o.sheetUnlock)o.sheetUnlock=[];if(!Array.isArray(o.attempts))o.attempts=[];o.study=Object.assign(JSON.parse(JSON.stringify(DEF.study)),o.study||{});if(!o.study.byDate)o.study.byDate={};return o;}catch(e){return JSON.parse(JSON.stringify(DEF));}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 let S=load();
 function ds(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');}
@@ -547,10 +673,14 @@ function studyEncourage(){ensureStudyDay();const todayMs=S.study.todayMs||0;cons
  if((S.study.totalMs||0)>0)return '🌱 每天一点点，根号会越来越乖的。';
  return '⏱️ 开始答题后会自动计时，首页能看到你的努力～';}
 function studyCardHtml(){ensureStudyDay();const tMs=S.study.todayMs||0,tot=S.study.totalMs||0;
+ const todays=(S.attempts||[]).filter(a=>a.date===today()&&!a.variant);
+ const n=todays.length,correct=todays.filter(a=>a.firstCorrect).length,hinted=todays.filter(a=>a.hintUsed).length;
+ const avg=n?Math.round(todays.reduce((sum,a)=>sum+(a.firstTimeMs||0),0)/n):0;
  return `<div class="card timecard" id="studyCard"><div class="row"><div style="font-size:34px">⏱️</div><div class="sp"><div style="font-size:18px;font-weight:900">学习时长</div><div class="sub">只在答题时计时 · 切到后台会暂停</div></div></div>
  <div class="row" style="margin-top:12px;gap:16px"><div class="sp center"><div class="tbig" id="homeTodayDur">${fmtDur(tMs)}</div><div class="tlab">今日学习</div></div>
  <div class="sp center"><div class="tbig">${fmtDur(tot)}</div><div class="tlab">累计学习</div></div></div>
  <div class="sub" style="margin-top:12px;font-weight:800">本周学习</div>${weekStudyBars()}
+ ${n?`<div class="pill" style="margin-top:10px">今日首答：${correct}/${n} 正确 · 提示 ${hinted} 题 · 平均每题 ${fmtDurCN(avg)}</div>`:''}
  <div class="encourage">${studyEncourage()}</div>
  ${(S.study.sessionsCount||0)?`<div class="sub" style="margin-top:8px">练习 ${S.study.sessionsCount} 次 · 最长一次 ${fmtDurCN(S.study.longestSessionMs||0)}</div>`:''}</div>`;}
 
@@ -609,28 +739,49 @@ function beginQuiz(mode,lv){let qs;
  else{const due=shuffle(dueWrong()).slice(0,3).map(w=>({q:w.q,sr:w.id}));const L=curLevel()||rnd(1,8);const used=new Set(due.map(d=>d.q.id));
   const fresh=genLevel(L,5).filter(x=>!used.has(x.q.id));qs=due.concat(fresh).slice(0,5);while(qs.length<5)qs.push({q:genFrom(rnd(1,8),used)});}
  sess={mode,lv,qs,i:0,correct:0,combo:0,usedHint:false,xp:0,locked:false,hint:false,choice:-1};pendingSess=null;closeModal();startStudyTimer();go('quiz');}
-function cur(){return sess.qs[sess.i];}
+function cur(){const it=sess.qs[sess.i];if(it&&it.startStudyMs===undefined)it.startStudyMs=studyClock.sessionMs;return it;}
 function pickOpt(j){if(!sess||sess.locked)return;sess.choice=j;judge(j===cur().q.answer);}
 function normNum(s){s=String(s).trim().replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-65248)).replace(/[．。]/g,'.').replace(/[−－—]/g,'-').replace(/\s/g,'');
  if(/^-?\d+\/\d+$/.test(s)){const p=s.split('/');return Number(p[0])/Number(p[1]);}if(!/^-?(\d+\.?\d*|\.\d+)$/.test(s))return NaN;return Number(s);}
 function submitFill(){if(!sess||sess.locked)return;const el=document.getElementById('fin');const v=normNum(el.value);
  if(isNaN(v)){el.classList.remove('bad');void el.offsetWidth;el.classList.add('bad');toast('请输入一个数字哦～');return;}
  sess.fillVal=el.value;judge(Math.abs(v-cur().q.answer)<1e-9);}
-function addWrong(q,meta){meta=meta||{};const t=today();const ex=S.wrong.find(w=>w.qid===q.id&&!w.mastered);
- if(ex){ex.streak=0;ex.due=t;ex.after=Math.min(ex.after||0,S.sessionNo);ex.miss=(ex.miss||1)+1;if(meta.fromSheet)ex.fromSheet=true;return;}
- S.wrong.push({id:'w'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),qid:q.id,q,kp:q.kp,streak:0,due:t,after:S.sessionNo,mastered:false,added:t,miss:1,fromSheet:!!meta.fromSheet});}
-function judge(ok){const it=cur(),q=it.q;sess.locked=true;sess.last=ok;it.res=ok?1:0;S.tot.ans++;
- const k=S.kp[q.kp]||(S.kp[q.kp]=[]);k.push(ok?1:0);if(k.length>10)k.shift();
- let gain=2;
- if(ok){S.tot.cor++;sess.correct++;sess.combo++;S.maxCombo=Math.max(S.maxCombo,sess.combo);gain=10+Math.min(sess.combo-1,5)*2;}
- else sess.combo=0;
- sess.xp+=gain;addXP(gain);
- if(it.sr){const w=S.wrong.find(x=>x.id===it.sr);if(w){if(ok){w.streak++;if(w.streak>=3){w.mastered=true;w.mdate=today();it.mastered=true;}else{w.due=addDays(today(),w.streak===1?1:3);w.after=0;}}
-   else{w.streak=0;w.due=today();w.after=S.sessionNo+1;w.miss=(w.miss||1)+1;}}}
- else if(!ok)addWrong(q);
- save();checkBadges();render();
- if(ok){confetti(sess.combo>=3?55:32);floatTxt(`+${gain} XP`);beep('ok');}else{document.querySelectorAll('.cf').forEach(c=>c.remove());beep('no');}
- showSheet(ok,it);}
+function addWrong(q,meta){meta=meta||{};const t=today();const skill=classifyQuestion(q);const ex=S.wrong.find(w=>w.qid===q.id&&!w.mastered);
+ if(ex){ex.streak=0;ex.due=t;ex.after=Math.min(ex.after||0,S.sessionNo);ex.miss=(ex.miss||1)+1;ex.skillId=skill.id;ex.skillLabel=skill.label;if(meta.fromSheet)ex.fromSheet=true;return;}
+ S.wrong.push({id:'w'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),qid:q.id,q,kp:q.kp,skillId:skill.id,skillLabel:skill.label,streak:0,due:t,after:S.sessionNo,mastered:false,added:t,miss:1,fromSheet:!!meta.fromSheet});}
+function judge(ok){
+ const it=cur(),q=it.q;
+ // Measure active study time, excluding time spent with the page in the background.
+ studyAccrue(Date.now());
+ // A retry is another attempt at the same learning item, not a second new question.
+ const isRetry=it.retryStage===1;
+ const elapsed=Math.max(0,studyClock.sessionMs-(isRetry?(it.retryStartStudyMs??studyClock.sessionMs):(it.startStudyMs??studyClock.sessionMs)));
+ sess.locked=true;sess.last=ok;it.res=ok?1:0;if(!isRetry)it.firstRes=ok?1:0;
+ if(!isRetry){
+  S.tot.ans++;
+  const k=S.kp[q.kp]||(S.kp[q.kp]=[]);k.push(ok?1:0);if(k.length>10)k.shift();
+  let gain=2;
+  if(ok){S.tot.cor++;sess.correct++;sess.combo++;S.maxCombo=Math.max(S.maxCombo,sess.combo);gain=10+Math.min(sess.combo-1,5)*2;}
+  else sess.combo=0;
+  sess.xp+=gain;addXP(gain);
+  if(it.sr){const w=S.wrong.find(x=>x.id===it.sr);if(w){if(ok){w.streak++;if(w.streak>=3){w.mastered=true;w.mdate=today();it.mastered=true;}else{w.due=addDays(today(),w.streak===1?1:3);w.after=0;}}
+    else{w.streak=0;w.due=today();w.after=S.sessionNo+1;w.miss=(w.miss||1)+1;}}}
+  else if(!ok)addWrong(q);
+  save();checkBadges();render();
+  if(ok){confetti(sess.combo>=3?55:32);floatTxt(`+${gain} XP`);beep('ok');}else{document.querySelectorAll('.cf').forEach(c=>c.remove());beep('no');}
+ }else{
+  // Retry feedback does not double-count stats, XP, combo, or wrong-book entries.
+  if(it.attemptLog){it.attemptLog.retryCorrect=!!ok;it.attemptLog.retryTimeMs=elapsed;}
+  save();if(ok){beep('ok');}else{beep('no');}
+ }
+ if(!isRetry){
+  it.firstTimeMs=elapsed;
+  const skill=classifyQuestion(q);it.skillId=skill.id;it.skillLabel=skill.label;it.attemptLog={date:today(),questionId:q.id,kp:q.kp,skillId:skill.id,skillLabel:skill.label,questionType:q.type,mode:sess.mode,variant:!!it.isVariant,firstCorrect:!!ok,hintUsed:!!it.hintUsed,firstTimeMs:elapsed,timestamp:Date.now()};
+  S.attempts.push(it.attemptLog);if(S.attempts.length>500)S.attempts.splice(0,S.attempts.length-500);
+  save();
+ }
+ showSheet(ok,it);
+}
 const PRAISE=['太棒了！','完全正确！','你真厉害！','漂亮！','稳稳的！','聪明！','就是这样！'];
 const COMFORT=['差一点点，没关系！','错了也是在进步哦～','别担心，我们一起看看！','这题有个小陷阱～'];
 function ansHtml(q){return q.type==='mc'?q.options[q.answer]:String(q.answer);}
@@ -638,21 +789,24 @@ function stepsHtml(q){return `<div class="steps"><b>📖 讲解</b><ol>${q.steps
 function showSheet(ok,it){const q=it.q;const sh=document.getElementById('sheet');const inn=sh.querySelector('.in');
  let extra='';if(it.sr&&ok)extra=it.mastered?'<div class="pill g">🎉 这道错题已经掌握啦！</div>':'<div class="pill g">复习进度 +1，再对几次就掌握啦</div>';
  if(!ok)extra='<div class="pill o">已放进错题本，过几天再来挑战它 📒</div>';
+ const retryButton=!ok&&it.retryStage!==1;
  inn.className='in '+(ok?'ok':'no');
  inn.innerHTML=`<div class="fbh">${mascot(ok?'happy':'think',58)}<div><div class="t">${ok?pick(PRAISE):pick(COMFORT)}</div>
- <div class="sub">${ok?(sess.combo>=2?`连击 ×${sess.combo}！继续保持 🔥`:'继续加油！'):'认真思考也有 +2 XP 哦'}</div></div></div>
+ <div class="sub">${ok?(sess.combo>=2?`连击 ×${sess.combo}！继续保持 🔥`:'继续加油！'):(retryButton?'先看懂讲解，再把这道题独立做出来。':'没关系，再看一遍讲解，我们再试一次。')}</div></div></div>
  ${ok?'':`<div class="ansline">💡 ${q.hint}</div><div class="ansline">正确答案：${ansHtml(q)}</div>`}
  ${ok?`<details style="margin-top:10px"><summary class="sub" style="font-weight:700">看看讲解 ▸</summary>${stepsHtml(q)}</details>`:stepsHtml(q)}
- ${extra}<button class="btn ${ok?'ok':'pri'} block" id="nextBtn" style="margin-top:14px" onclick="nextQ()">${sess.i+1>=sess.qs.length?'看看成绩 🏁':(ok?'下一题 →':'我明白了，下一题 →')}</button>`;
+ ${extra}<button class="btn ${ok?'ok':'pri'} block" id="nextBtn" style="margin-top:14px" onclick="${retryButton?'retryOriginal()':'nextQ()'}">${retryButton?'我明白了，重做原题 ↻':(sess.i+1>=sess.qs.length?'看看成绩 🏁':(ok?'下一题 →':'继续下一步 →'))}</button>`;
  inn.scrollTop=0;sh.classList.add('show');}
 function hideSheet(){document.getElementById('sheet').classList.remove('show');}
-function nextQ(){if(!sess)return;hideSheet();sess.i++;sess.locked=false;sess.hint=false;sess.choice=-1;if(sess.i>=sess.qs.length)finish();else{render();window.scrollTo(0,0);}}
-function useHint(){sess.hint=true;sess.usedHint=true;render();}
+function retryOriginal(){if(!sess)return;const it=cur();it.retryStage=1;it.retryStartStudyMs=studyClock.sessionMs;hideSheet();sess.locked=false;sess.hint=false;sess.choice=-1;sess.fillVal='';render();window.scrollTo(0,0);}
+function nextQ(){if(!sess)return;hideSheet();const it=cur();if(shouldAddVariant(it,S.attempts)&&!it.variantAdded){it.variantAdded=true;const lv=it.q.kp;const gens=G[lv];if(gens&&gens.length){let q2=null;for(let n=0;n<12;n++){const candidate=pick(gens)();candidate.kp=lv;if(candidate.id!==it.q.id&&!sess.qs.some(x=>x.q.id===candidate.id)){q2=candidate;break;}}if(q2)sess.qs.splice(sess.i+1,0,{q:q2,isVariant:true});}}
+ sess.i++;sess.locked=false;sess.hint=false;sess.choice=-1;if(sess.i>=sess.qs.length)finish();else{render();window.scrollTo(0,0);}}
+function useHint(){sess.hint=true;sess.usedHint=true;cur().hintUsed=true;render();}
 function quitQuiz(){modal(`<div class="center">${mascot('normal',70)}<h2>要先休息一下吗？</h2><p class="sub">已经答过的题会记录下来，但这一轮不算完成哦。</p></div>
  <div class="stack"><button class="btn pur block" onclick="closeModal()">继续答题 💪</button><button class="btn ghost block" onclick="closeModal();hideSheet();stopStudyTimer();sess=null;go('home')">先休息一下</button></div>`);}
-function finish(){const s=sess;const tot=s.qs.length,c=s.correct;const r={mode:s.mode,lv:s.lv,c,tot,xp:s.xp,stars:0,pass:false};
+function finish(){const s=sess;const score=officialQuizScore(s.qs);const tot=score.tot,c=score.c;const r={mode:s.mode,lv:s.lv,c,tot,xp:s.xp,stars:0,pass:false};
  if(s.mode==='level'||s.mode==='boss'){const need=s.mode==='boss'?8:4;r.pass=c>=need;r.need=need;
-  if(r.pass)r.stars=1+(c===tot?1:0)+(s.usedHint?0:1);
+  if(r.pass)r.stars=2+(c===tot?1:0);
   if(s.mode==='level'){const L=S.levels[s.lv]||{stars:0,best:0,passed:false,plays:0};r.first=!L.passed&&r.pass;L.plays++;L.best=Math.max(L.best,c);
    if(r.pass){L.passed=true;L.stars=Math.max(L.stars,r.stars);}S.levels[s.lv]=L;}
   else{r.first=!S.boss.passed&&r.pass;S.boss.best=Math.max(S.boss.best||0,c);if(r.pass){S.boss.passed=true;S.boss.stars=Math.max(S.boss.stars||0,r.stars);}}
@@ -709,7 +863,7 @@ function openLevel(n){const isB=n===9;const unlocked=isB?allPassed():lvUnlocked(
  <div class="sub" style="margin-top:10px;line-height:1.7">${isB?'共 10 题，答对 8 题击败 Boss。':'共 5 题，答对 4 题过关。'}<br>⭐ 过关 · 全对 +1⭐ · 不用提示 +1⭐</div>
  <div class="stack"><button class="btn pri block" id="startBtn" onclick="startSession('${isB?'boss':'level'}',${n})">${isB?'挑战 Boss 👹':'开始闯关 ⚔️'}</button><button class="btn ghost block" onclick="closeModal()">再看看</button></div>`);}
 function vQuiz(){const it=cur(),q=it.q;const info=LV[q.kp-1];
- const dots=sess.qs.map((x,j)=>`<span class="dot ${x.res===1?'g':x.res===0?'o':''} ${j===sess.i?'cur':''}"></span>`).join('');
+ const dots=sess.qs.map((x,j)=>{const res=x.firstRes!==undefined?x.firstRes:x.res;return `<span class="dot ${res===1?'g':res===0?'o':''} ${j===sess.i?'cur':''}" title="${x.isVariant?'变式练习':(res===1?'首次答对':res===0?'首次答错':'未作答')}"></span>`;}).join('');
  const title=sess.mode==='daily'?'🎯 每日打卡':sess.mode==='boss'?'👹 Boss 关':sess.mode==='review'?'🔁 错题复习':`第 ${sess.lv} 关`;
  let body;
  if(q.type==='mc'){body=`<div class="opts">${q.options.map((o,j)=>{const c=sess.locked?(j===q.answer?'right':(j===sess.choice?'wrongc':'dim')):'';
@@ -726,7 +880,7 @@ function vResult(){const r=lastRes;if(!r)return vHome();let head,body='';
  const xpL=`<div class="pill" style="font-size:16px">+${r.xp} XP</div>${r.studyMs?`<div class="pill g" style="font-size:16px">⏱️ 本局 ${fmtDur(r.studyMs)}</div>`:''}`;
  if(r.mode==='level'||r.mode==='boss'){
   if(r.pass){head=`${mascot('happy',90)}<h2 style="font-size:26px">${r.mode==='boss'?'Boss 被你打败啦！👑':'闯关成功！'}</h2><div class="bigstars">${stars3(r.stars)}</div>`;
-   body=`<div class="score">${r.c} / ${r.tot}</div>${xpL}${r.first&&r.mode==='level'&&r.lv<8?`<p><b>🔓 第 ${r.lv+1} 关已解锁！</b></p>`:''}${r.first&&r.mode==='level'&&r.lv===8?'<p><b>🔓 Boss 关已解锁！</b></p>':''}${r.stars<3?`<p class="sub">${r.c<r.tot?'全部答对可以多拿一颗星':'不用提示也全对，就能拿 3 星'} ⭐</p>`:''}`;}
+   body=`<div class="score">${r.c} / ${r.tot}</div>${xpL}${r.first&&r.mode==='level'&&r.lv<8?`<p><b>🔓 第 ${r.lv+1} 关已解锁！</b></p>`:''}${r.first&&r.mode==='level'&&r.lv===8?'<p><b>🔓 Boss 关已解锁！</b></p>':''}${r.stars<3?`<p class="sub">把还不熟的题再练一练，就有机会拿到 3 星 ⭐</p>`:''}`;}
   else{head=`${mascot('normal',90)}<h2 style="font-size:24px">就差一点点！</h2>`;body=`<div class="score">${r.c} / ${r.tot}</div><p>答对 ${r.need} 题就能过关。错的题已经放进错题本，看过讲解再来一次，一定行！💪</p>${xpL}`;}}
  else if(r.mode==='daily'){head=`${mascot('happy',90)}<h2 style="font-size:26px">${r.checkin?'今日打卡成功！':'加练完成！'}</h2><div style="font-size:50px">🔥 ${streak()}</div><div class="sub">连续打卡天数</div>`;
   body=`<div class="score" style="margin-top:8px">${r.c} / ${r.tot}</div>${xpL}${r.mastered?`<p>🎉 有 ${r.mastered} 道错题被你彻底掌握！</p>`:''}<p class="sub">明天再来，火苗会越来越旺哦～</p>`;}
@@ -739,14 +893,25 @@ function vResult(){const r=lastRes;if(!r)return vHome();let head,body='';
  return `<div class="card res" style="margin-top:30px">${head}${body}<div class="stack">${btns}</div></div>`;}
 function dueTxt(w){const t=today();if(w.due<=t)return w.after>S.sessionNo?'下一轮练习复习':'今天可复习';if(w.due===addDays(t,1))return '明天复习';const p=w.due.split('-');return `${+p[1]}月${+p[2]}日复习`;}
 function vWrong(){const act=activeWrong(),due=dueWrong(),mas=S.wrong.filter(w=>w.mastered).length;
- const kps=LV.map((l,i)=>{const a=S.kp[i+1]||[];const pct=a.reduce((x,y)=>x+y,0)*10;const nw=act.filter(w=>w.kp===i+1).length;
-  return `<div class="kp"><div class="row"><span>${l.icon} ${l.name}</span><span class="sp"></span><span class="sub">${a.length?pct+'%':'未练习'}${nw?` · 待复习 ${nw}`:''}</span></div><div class="prog" style="height:12px;margin-top:5px"><i style="width:${pct}%;${pct>=80?'background:linear-gradient(90deg,#4ade80,#22c55e)':''}"></i></div></div>`;}).join('');
- const items=act.slice().sort((a,b)=>a.due<b.due?-1:1).map(w=>`<details class="witem"><summary><div class="row" style="margin-bottom:4px"><span class="pill">${LV[w.kp-1].short}</span>${w.fromSheet?'<span class="pill o">来自试卷</span>':''}<span class="sp"></span><span class="sr">${[0,1,2].map(i=>`<i class="${i<w.streak?'f':''}"></i>`).join('')}</span><span class="sub" style="margin-left:6px">${dueTxt(w)}</span></div><div class="wst">${w.q.stem}</div><div class="sub">点开看答案和讲解 ▸</div></summary>
+ const recommendation=recommendSkill(LV.map((_,i)=>S.kp[i+1]||[]));
+ const subskillRecommendation=recommendSubskill(S.attempts);
+ const subskillCard=subskillRecommendation
+  ? (()=>{const plan=getSkillPlan(subskillRecommendation.id);return `<div class="card"><h2>🔎 具体技能诊断</h2><div style="font-weight:900;font-size:16px">${subskillRecommendation.label}</div><div class="sub" style="margin:7px 0;line-height:1.6">已有 ${subskillRecommendation.total} 次首答记录，正确率 ${subskillRecommendation.percent}%。建议先检查前置技能，再练当前技能，最后用新题检验。</div>${plan.prerequisites.length?`<div class="sub" style="margin:6px 0">建议顺序：${plan.prerequisites.map(p=>p.label).join(' → ')} → ${plan.current.label}</div><div class="stack">${plan.prerequisites.map((p,i)=>`<button class="btn sec block" onclick="startSession('level',${p.level})">第 ${p.level} 关：${p.label}（前置知识 ${i+1}）→</button>`).join('')}<button class="btn pri block" onclick="startSession('level',${Number(subskillRecommendation.id.split('-')[0])})">完成前置复习后：练当前技能 →</button></div>`:`<button class="btn sec block" onclick="startSession('level',${plan.firstLevel})">练习对应知识点 →</button>`}<div class="sub" style="margin-top:7px">技能标签目前由题目文字初步判断；个别题目可在题库中手动指定技能标签。</div></div>`;})()
+  : `<div class="card"><h2>🔎 具体技能诊断</h2><div class="sub" style="line-height:1.6">每个技能至少积累 3 次首答记录后，才会显示薄弱技能建议。目前还没有足够的同类题记录。</div></div>`;
+ const recommendationCard= recommendation.level
+  ? `<div class="card"><h2>🧭 下一步学什么？</h2><div style="font-weight:900;font-size:17px">${LV[recommendation.level-1].icon} ${LV[recommendation.level-1].name}</div><div class="sub" style="line-height:1.6;margin:7px 0">${recommendation.reason}。当前记录：${recommendation.count} 题，正确率 ${recommendation.percent}%。先把这一块练稳，再往后推进。</div><button class="btn pri block" onclick="startSession('level',${recommendation.level})">开始这组基础练习 →</button></div>`
+  : `<div class="card"><h2>🧭 下一步学什么？</h2><div style="font-weight:900;font-size:17px">🎯 ${recommendation.reason}</div><div class="sub" style="margin-top:7px">可以挑战 Boss，或选一关做变式练习。</div><button class="btn pri block" onclick="startSession('boss')">挑战综合题 →</button></div>`;
+ const kps=LV.map((l,i)=>{const a=S.kp[i+1]||[];const stat=skillSnapshot(a);const pct=stat.percent;const nw=act.filter(w=>w.kp===i+1).length;
+  const status=stat.status;
+  return `<div class="kp"><div class="row"><span>${l.icon} ${l.name}</span><span class="sp"></span><span class="sub">${a.length?`近${a.length}题 ${pct}% · ${status}`:'未练习'}${nw?` · 待复习 ${nw}`:''}</span></div><div class="prog" style="height:12px;margin-top:5px"><i style="width:${pct}%;${pct>=80?'background:linear-gradient(90deg,#4ade80,#22c55e)':''}"></i></div></div>`;}).join('');
+ const items=act.slice().sort((a,b)=>a.due<b.due?-1:1).map(w=>`<details class="witem"><summary><div class="row" style="margin-bottom:4px"><span class="pill">${LV[w.kp-1].short}</span>${w.fromSheet?'<span class="pill o">来自试卷</span>':''}<span class="sp"></span><span class="sr">${[0,1,2].map(i=>`<i class="${i<w.streak?'f':''}"></i>`).join('')}</span><span class="sub" style="margin-left:6px">${dueTxt(w)}</span></div><div class="wst">${w.q.stem}</div><div class="sub">技能标签：${w.skillLabel||classifyQuestion(w.q).label} · 点开看答案和讲解 ▸</div></summary>
   <div class="ansline">正确答案：${ansHtml(w.q)}</div>${stepsHtml(w.q)}</details>`).join('');
  return `${topBar()}<div class="ptitle">📒 错题本</div>
  <div class="card"><div style="font-size:18px;font-weight:900">待复习 ${act.length} 题 · 已掌握 ${mas} 题</div><div class="sub" style="line-height:1.6">错题会在下一轮练习、1 天后、3 天后再出现，连续答对 3 次 <span class="sr"><i class="f"></i><i class="f"></i><i class="f"></i></span> 就算掌握</div>
  <button class="btn ${due.length?'pri':'ghost'} block" id="reviewBtn" style="margin-top:12px" onclick="startSession('review')" ${due.length?'':'disabled'}>${due.length?`开始复习（${Math.min(due.length,10)} 题）🔁`:(act.length?'暂时没有到期的错题，晚点再来 ⏰':'错题本空空的，真棒 🎉')}</button></div>
- <div class="card"><h2>📊 掌握进度</h2><div class="sub" style="margin-bottom:4px">按每个知识点最近 10 次答题计算</div>${kps}</div>
+ ${recommendationCard}
+ ${subskillCard}
+ <div class="card"><h2>📊 掌握进度</h2><div class="sub" style="margin-bottom:4px">按每个知识点最近 10 次答题计算；推荐路径按前置知识顺序判断</div>${kps}</div>
  ${act.length?`<div class="card"><h2>📝 错题列表</h2>${items}</div>`:''}`;}
 function vBadge(){const L=lvInfo(S.xp);const acc=S.tot.ans?Math.round(S.tot.cor/S.tot.ans*100):0;const got=BADGES.filter(b=>S.badges[b.id]).length;
  return `${topBar()}<div class="ptitle">🏆 我的成就</div>

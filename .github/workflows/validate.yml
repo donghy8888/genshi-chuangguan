@@ -1,0 +1,41 @@
+name: Validate math practice app
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      # Skill tags, mistake-book labels, and subskill diagnostics share the scoring test suite.
+      - name: Run scoring, skill-path, and diagnosis unit tests
+        run: node --test tests/session-scoring.test.js
+      - name: Check JavaScript syntax
+        run: |
+          node --check src/questions.js
+          node --check src/app.js
+      - name: Check build script syntax
+        run: sh -n src/build.sh
+      - name: Build standalone site
+        run: sh src/build.sh
+      - name: Verify committed site matches the current source build
+        run: git diff --exit-code -- index.html
+      - name: Check generated page JavaScript
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path("index.html").read_text(encoding="utf-8")
+          scripts = re.findall(r"<script>(.*?)</script>", html, flags=re.S | re.I)
+          if not scripts:
+              raise SystemExit("No generated inline script found")
+          Path("/tmp/generated-app.js").write_text(scripts[-1], encoding="utf-8")
+          print(f"Extracted generated JavaScript: {len(scripts[-1])} characters")
+          PY
+          node --check /tmp/generated-app.js
