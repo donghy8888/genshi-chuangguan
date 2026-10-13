@@ -619,18 +619,29 @@ function submitFill(){if(!sess||sess.locked)return;const el=document.getElementB
 function addWrong(q,meta){meta=meta||{};const t=today();const ex=S.wrong.find(w=>w.qid===q.id&&!w.mastered);
  if(ex){ex.streak=0;ex.due=t;ex.after=Math.min(ex.after||0,S.sessionNo);ex.miss=(ex.miss||1)+1;if(meta.fromSheet)ex.fromSheet=true;return;}
  S.wrong.push({id:'w'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),qid:q.id,q,kp:q.kp,streak:0,due:t,after:S.sessionNo,mastered:false,added:t,miss:1,fromSheet:!!meta.fromSheet});}
-function judge(ok){const it=cur(),q=it.q;sess.locked=true;sess.last=ok;it.res=ok?1:0;S.tot.ans++;
- const k=S.kp[q.kp]||(S.kp[q.kp]=[]);k.push(ok?1:0);if(k.length>10)k.shift();
- let gain=2;
- if(ok){S.tot.cor++;sess.correct++;sess.combo++;S.maxCombo=Math.max(S.maxCombo,sess.combo);gain=10+Math.min(sess.combo-1,5)*2;}
- else sess.combo=0;
- sess.xp+=gain;addXP(gain);
- if(it.sr){const w=S.wrong.find(x=>x.id===it.sr);if(w){if(ok){w.streak++;if(w.streak>=3){w.mastered=true;w.mdate=today();it.mastered=true;}else{w.due=addDays(today(),w.streak===1?1:3);w.after=0;}}
-   else{w.streak=0;w.due=today();w.after=S.sessionNo+1;w.miss=(w.miss||1)+1;}}}
- else if(!ok)addWrong(q);
- save();checkBadges();render();
- if(ok){confetti(sess.combo>=3?55:32);floatTxt(`+${gain} XP`);beep('ok');}else{document.querySelectorAll('.cf').forEach(c=>c.remove());beep('no');}
- showSheet(ok,it);}
+function judge(ok){
+ const it=cur(),q=it.q;
+ // A retry is another attempt at the same learning item, not a second new question.
+ const isRetry=it.retryStage===1;
+ sess.locked=true;sess.last=ok;it.res=ok?1:0;if(!isRetry)it.firstRes=ok?1:0;
+ if(!isRetry){
+  S.tot.ans++;
+  const k=S.kp[q.kp]||(S.kp[q.kp]=[]);k.push(ok?1:0);if(k.length>10)k.shift();
+  let gain=2;
+  if(ok){S.tot.cor++;sess.correct++;sess.combo++;S.maxCombo=Math.max(S.maxCombo,sess.combo);gain=10+Math.min(sess.combo-1,5)*2;}
+  else sess.combo=0;
+  sess.xp+=gain;addXP(gain);
+  if(it.sr){const w=S.wrong.find(x=>x.id===it.sr);if(w){if(ok){w.streak++;if(w.streak>=3){w.mastered=true;w.mdate=today();it.mastered=true;}else{w.due=addDays(today(),w.streak===1?1:3);w.after=0;}}
+    else{w.streak=0;w.due=today();w.after=S.sessionNo+1;w.miss=(w.miss||1)+1;}}}
+  else if(!ok)addWrong(q);
+  save();checkBadges();render();
+  if(ok){confetti(sess.combo>=3?55:32);floatTxt(`+${gain} XP`);beep('ok');}else{document.querySelectorAll('.cf').forEach(c=>c.remove());beep('no');}
+ }else{
+  // Retry feedback does not double-count stats, XP, combo, or wrong-book entries.
+  if(ok){beep('ok');}else{beep('no');}
+ }
+ showSheet(ok,it);
+}
 const PRAISE=['太棒了！','完全正确！','你真厉害！','漂亮！','稳稳的！','聪明！','就是这样！'];
 const COMFORT=['差一点点，没关系！','错了也是在进步哦～','别担心，我们一起看看！','这题有个小陷阱～'];
 function ansHtml(q){return q.type==='mc'?q.options[q.answer]:String(q.answer);}
@@ -638,19 +649,22 @@ function stepsHtml(q){return `<div class="steps"><b>📖 讲解</b><ol>${q.steps
 function showSheet(ok,it){const q=it.q;const sh=document.getElementById('sheet');const inn=sh.querySelector('.in');
  let extra='';if(it.sr&&ok)extra=it.mastered?'<div class="pill g">🎉 这道错题已经掌握啦！</div>':'<div class="pill g">复习进度 +1，再对几次就掌握啦</div>';
  if(!ok)extra='<div class="pill o">已放进错题本，过几天再来挑战它 📒</div>';
+ const retryButton=!ok&&it.retryStage!==1;
  inn.className='in '+(ok?'ok':'no');
  inn.innerHTML=`<div class="fbh">${mascot(ok?'happy':'think',58)}<div><div class="t">${ok?pick(PRAISE):pick(COMFORT)}</div>
- <div class="sub">${ok?(sess.combo>=2?`连击 ×${sess.combo}！继续保持 🔥`:'继续加油！'):'认真思考也有 +2 XP 哦'}</div></div></div>
+ <div class="sub">${ok?(sess.combo>=2?`连击 ×${sess.combo}！继续保持 🔥`:'继续加油！'):(retryButton?'先看懂讲解，再把这道题独立做出来。':'没关系，再看一遍讲解，我们再试一次。')}</div></div></div>
  ${ok?'':`<div class="ansline">💡 ${q.hint}</div><div class="ansline">正确答案：${ansHtml(q)}</div>`}
  ${ok?`<details style="margin-top:10px"><summary class="sub" style="font-weight:700">看看讲解 ▸</summary>${stepsHtml(q)}</details>`:stepsHtml(q)}
- ${extra}<button class="btn ${ok?'ok':'pri'} block" id="nextBtn" style="margin-top:14px" onclick="nextQ()">${sess.i+1>=sess.qs.length?'看看成绩 🏁':(ok?'下一题 →':'我明白了，下一题 →')}</button>`;
+ ${extra}<button class="btn ${ok?'ok':'pri'} block" id="nextBtn" style="margin-top:14px" onclick="${retryButton?'retryOriginal()':'nextQ()'}">${retryButton?'我明白了，重做原题 ↻':(sess.i+1>=sess.qs.length?'看看成绩 🏁':(ok?'下一题 →':'继续下一步 →'))}</button>`;
  inn.scrollTop=0;sh.classList.add('show');}
 function hideSheet(){document.getElementById('sheet').classList.remove('show');}
-function nextQ(){if(!sess)return;hideSheet();sess.i++;sess.locked=false;sess.hint=false;sess.choice=-1;if(sess.i>=sess.qs.length)finish();else{render();window.scrollTo(0,0);}}
+function retryOriginal(){if(!sess)return;const it=cur();it.retryStage=1;hideSheet();sess.locked=false;sess.hint=false;sess.choice=-1;sess.fillVal='';render();window.scrollTo(0,0);}
+function nextQ(){if(!sess)return;hideSheet();const it=cur();if(it.retryStage===1&&it.res===1&&!it.variantAdded){it.variantAdded=true;const lv=it.q.kp;const gens=G[lv];if(gens&&gens.length){let q2=null;for(let n=0;n<12;n++){const candidate=pick(gens)();candidate.kp=lv;if(candidate.id!==it.q.id){q2=candidate;break;}}if(q2)sess.qs.splice(sess.i+1,0,{q:q2,isVariant:true});}}
+ sess.i++;sess.locked=false;sess.hint=false;sess.choice=-1;if(sess.i>=sess.qs.length)finish();else{render();window.scrollTo(0,0);}}
 function useHint(){sess.hint=true;sess.usedHint=true;render();}
 function quitQuiz(){modal(`<div class="center">${mascot('normal',70)}<h2>要先休息一下吗？</h2><p class="sub">已经答过的题会记录下来，但这一轮不算完成哦。</p></div>
  <div class="stack"><button class="btn pur block" onclick="closeModal()">继续答题 💪</button><button class="btn ghost block" onclick="closeModal();hideSheet();stopStudyTimer();sess=null;go('home')">先休息一下</button></div>`);}
-function finish(){const s=sess;const tot=s.qs.length,c=s.correct;const r={mode:s.mode,lv:s.lv,c,tot,xp:s.xp,stars:0,pass:false};
+function finish(){const s=sess;const official=s.qs.filter(x=>!x.isVariant);const tot=official.length,c=official.filter(x=>x.firstRes===1).length;const r={mode:s.mode,lv:s.lv,c,tot,xp:s.xp,stars:0,pass:false};
  if(s.mode==='level'||s.mode==='boss'){const need=s.mode==='boss'?8:4;r.pass=c>=need;r.need=need;
   if(r.pass)r.stars=1+(c===tot?1:0)+(s.usedHint?0:1);
   if(s.mode==='level'){const L=S.levels[s.lv]||{stars:0,best:0,passed:false,plays:0};r.first=!L.passed&&r.pass;L.plays++;L.best=Math.max(L.best,c);
