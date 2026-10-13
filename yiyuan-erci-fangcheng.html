@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#6d5dfc"><title>一元二次方程 · 小根数学课</title>
+<style>
+:root{--ink:#282542;--muted:#77738f;--purple:#6d5dfc;--orange:#ff805c;--green:#22a06b;--line:#ebe8fb}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);background:linear-gradient(155deg,#8876ff,#5bb8ef 58%,#70e0c4);min-height:100vh}
+main{max-width:620px;margin:auto;padding:16px 14px 40px}.top{display:flex;justify-content:space-between;align-items:center;color:white;margin:4px 2px 14px}.top a{color:white;text-decoration:none;font-weight:700}.hero,.card{background:#fff;border-radius:22px;padding:20px;margin:12px 0;box-shadow:0 7px 0 #4532a51c,0 12px 28px #34216b1c}.hero{background:linear-gradient(135deg,#fff,#f5f1ff)}h1{font-size:27px;margin:0 0 8px}h2{font-size:20px;margin:0 0 12px}.muted{color:var(--muted);font-size:14px;line-height:1.65}.bar{height:9px;background:#eeeafc;border-radius:20px;overflow:hidden;margin:12px 0}.bar i{display:block;height:100%;background:linear-gradient(90deg,#7d68ff,#47c9d8);width:0;transition:width .2s}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.unit{border:2px solid var(--line);border-radius:16px;padding:13px;background:white;text-align:left;min-height:104px;font:inherit;cursor:pointer}.unit strong{display:block;margin:7px 0 4px}.unit small{color:var(--muted)}.unit.done{border-color:#8dd9b2;background:#f1fff7}.unit.locked{opacity:.48}.btn{border:0;border-radius:15px;background:#eeeaff;color:#5142c7;font-weight:800;font-size:16px;padding:13px 16px;min-height:48px;cursor:pointer}.btn.primary{background:linear-gradient(180deg,#ff9975,#ff7755);color:white;width:100%;box-shadow:0 4px 0 #d8573b}.btn.green{background:#dcf8e8;color:#147848}.btn.ghost{background:#f4f2fa;color:#6f6a8d}.btn:disabled{opacity:.5}.stack{display:grid;gap:9px}.tag{display:inline-block;background:#eeeaff;color:#5a4ad6;border-radius:10px;padding:4px 9px;font-size:12px;font-weight:800}.formula{background:#f7f5ff;border:1px solid #e8e2ff;border-radius:15px;padding:14px;text-align:center;font-size:21px;font-weight:800;margin:12px 0;overflow-wrap:anywhere}.example{background:#f7fbff;border-left:4px solid #62a8ef;padding:12px 14px;border-radius:10px;line-height:1.8;margin:12px 0}.question{font-size:21px;font-weight:800;line-height:1.6;margin:16px 0}.choice{width:100%;text-align:left;border:2px solid #e9e6f6;border-radius:14px;background:white;padding:13px;font-size:17px;margin:5px 0;cursor:pointer}.choice:disabled{cursor:default}.choice.right{border-color:#22a06b;background:#effcf5}.choice.wrong{border-color:#f17c6c;background:#fff4f1}.feedback{border-radius:14px;padding:13px;line-height:1.7;margin:12px 0;background:#f4f2ff}.feedback.good{background:#eafaf1}.feedback.bad{background:#fff1ed}.row{display:flex;align-items:center;justify-content:space-between;gap:10px}.hidden{display:none!important}.pill{font-size:13px;color:var(--muted)}footer{text-align:center;color:#fff;font-size:12px;padding:15px}@media(max-width:390px){.grid{grid-template-columns:1fr}h1{font-size:24px}}
+</style></head>
+<body><main>
+<div class="top"><a href="./">← 返回根式闯关</a><span>🌱 小根数学课</span></div>
+<section id="home">
+ <div class="hero"><span style="font-size:45px">🧩</span><div><h1>一元二次方程</h1><div class="muted">从看懂方程开始，再学会解方程。每一步先弄明白，再往下走。</div></div></div>
+ <div class="card"><div class="row"><b>学习进度</b><span id="progressText" class="pill">0 / 8 关掌握</span></div><div class="bar"><i id="progressBar"></i></div><div class="muted" id="encourage">先从第一关开始，不需要一次学完。</div></div>
+ <div class="grid" id="units"></div>
+ <div class="card"><h2>🧭 推荐学习顺序</h2><div class="muted">① 认识标准形式 → ② 最简单的开平方 → ③ 因式分解法 → ④ 配方法的想法 → ⑤ 求根公式 → ⑥ 判别式 → ⑦ 选择合适方法 → ⑧ 应用题。</div></div>
+</section>
+<section id="lesson" class="hidden">
+ <div class="row"><button class="btn ghost" onclick="toHome()">← 课程目录</button><span id="lessonCount" class="tag"></span></div>
+ <div class="card"><div class="muted" id="unitLabel"></div><h1 id="lessonTitle"></h1><p id="lessonGoal" class="muted"></p><div id="lessonBody"></div><button class="btn primary" onclick="startQuiz()">我明白了，开始练习 →</button></div>
+</section>
+<section id="quiz" class="hidden">
+ <div class="row"><button class="btn ghost" onclick="toHome()">退出练习</button><span id="qCount" class="tag"></span></div>
+ <div class="card"><div class="bar"><i id="qBar"></i></div><div id="qSkill" class="muted"></div><div id="qText" class="question"></div><div id="choices" class="stack"></div><div id="feedback" class="feedback hidden" aria-live="polite"></div><button id="nextBtn" class="btn primary hidden" onclick="nextQuestion()">下一题 →</button></div>
+</section>
+<section id="result" class="hidden">
+ <div class="card" style="text-align:center"><div id="resultEmoji" style="font-size:54px">🎉</div><h1 id="resultTitle">练习完成</h1><p id="resultText" class="muted"></p><div class="formula" id="resultScore"></div><div id="resultAdvice" class="example"></div><div class="stack"><button class="btn primary" id="resultNext" onclick="nextUnit()">继续下一关 →</button><button class="btn ghost" onclick="toHome()">返回课程目录</button><button class="btn ghost" onclick="retryUnit()">再练一次</button></div></div>
+</section>
+<footer>学习进度保存在当前浏览器中。遇到错题，先看原因，再做一次。</footer>
+</main>
+<script>
+const units=[
+{id:1,title:"认识一元二次方程",short:"看懂标准形式",goal:"能看出谁是未知数、最高次数是多少，并判断是不是一元二次方程。",body:'<div class="formula">ax² + bx + c = 0（a ≠ 0）</div><p>“一元”就是只有一个未知数，通常写 x；“二次”表示最高次数是 2；“方程”表示有等号。</p><div class="example"><b>例子：</b><br>2x² + 3x − 5 = 0：是，因为只有 x，最高次数是 2。<br>x³ + x = 0：不是，最高次数是 3。<br>3x + 2 = 0：不是，最高次数只有 1。<br>2x² + 3x = 0：也是，缺少常数项没关系。</div>',qs:[
+{q:"下面哪个是一元二次方程？",o:["3x + 2 = 0","2x² − 5x + 1 = 0","x³ − 1 = 0","x + y = 3"],a:1,e:"标准形式中只有一个未知数 x，最高次数为 2，且等式右边为 0。"},
+{q:"方程 4x² − 7x = 0 中，二次项系数 a 是多少？",o:["4","−7","0","7"],a:0,e:"与 ax² + bx + c = 0 对照，x² 前面的系数就是 a，所以 a=4。"},
+{q:"一元二次方程的标准形式里，为什么要求 a ≠ 0？",o:["不然就没有等号","不然最高次数可能降到一次","不然 x 一定等于 0","为了让 b 为正数"],a:1,e:"如果 a=0，x² 项消失，方程就不再是二次方程。"}]},
+{id:2,title:"最简单的解法：开平方",short:"x² = k",goal:"理解平方等于正数时，x 通常有正、负两个解。",body:'<div class="formula">x² = 9 → x = 3 或 x = −3</div><p>因为 3²=9，(−3)² 也等于 9。解方程时要找所有满足等式的 x，不能只写正数根。</p><div class="example"><b>例子：</b><br>x² = 16 → x = ±4。<br>(x−2)² = 9 → x−2 = ±3，所以 x=5 或 x=−1。<br>如果 x²=0，则只有 x=0。</div>',qs:[
+{q:"方程 x² = 25 的解是？",o:["只有 x=5","x=5 或 x=−5","x=25 或 x=−25","没有实数解"],a:1,e:"5²=25，(−5)²=25，所以两个解都要写。"},
+{q:"方程 (x−1)² = 4 的解是？",o:["x=3 或 x=−1","x=2 或 x=−2","只有 x=3","x=1 或 x=4"],a:0,e:"x−1=±2，因此 x=1+2=3，或 x=1−2=−1。"},
+{q:"方程 x² = 0 有几个不同的实数解？",o:["0 个","1 个","2 个","3 个"],a:1,e:"只有 x=0 满足，正负号不会产生两个不同的数。"}]},
+{id:3,title:"因式分解法",short:"把乘积变成 0",goal:"会把简单的二次三项式分解，再利用“两个数相乘等于 0”。",body:'<div class="formula">(x+2)(x+3)=0</div><p>两个数的乘积为 0，至少有一个因数为 0。因此 x+2=0 或 x+3=0。</p><div class="example"><b>例子：</b><br>x²+5x+6=0<br>→ (x+2)(x+3)=0<br>→ x=−2 或 x=−3。<br><b>检查：</b>把解代回原式，等式都成立。</div>',qs:[
+{q:"x² + 7x + 12 = 0 可以分解为？",o:["(x+3)(x+4)=0","(x+6)(x+2)=0","(x−3)(x−4)=0","(x+7)(x+12)=0"],a:0,e:"3×4=12，3+4=7，所以是 (x+3)(x+4)=0。"},
+{q:"若 (x−4)(x+2)=0，则 x 等于？",o:["4 或 −2","−4 或 2","4 或 2","−4 或 −2"],a:0,e:"令每个因数分别为 0：x−4=0 得 4；x+2=0 得 −2。"},
+{q:"x² − 9 = 0 的解是？",o:["x=9 或 x=−9","x=3 或 x=−3","只有 x=3","x=0 或 x=9"],a:1,e:"平方差公式：x²−9=(x−3)(x+3)，所以 x=3 或 x=−3。"}]},
+{id:4,title:"配方法：把式子配成平方",short:"配成完全平方",goal:"知道配方法的核心是凑出完全平方，为求根公式做准备。",body:'<div class="formula">x² + 6x + 9 = (x+3)²</div><p>把一次项系数 6 除以 2 得 3，再平方得到 9。于是 x²+6x+9 就能写成 (x+3)²。</p><div class="example"><b>例子：</b><br>x²+4x+1=0<br>→ x²+4x=−1<br>→ x²+4x+4=3<br>→ (x+2)²=3。<br>这一步重点是理解“补上的数 = 一次项系数一半的平方”。</div>',qs:[
+{q:"x² + 8x + □ 要成为完全平方，方框里应填？",o:["4","8","16","64"],a:2,e:"一次项系数 8 的一半是 4，4²=16，所以 x²+8x+16=(x+4)²。"},
+{q:"x² − 10x + □ 要成为完全平方，方框里应填？",o:["5","10","25","100"],a:2,e:"−10 的一半是 −5，平方后为 25；表达式等于 (x−5)²。"},
+{q:"解 x² + 6x + 5 = 0，配方后哪一步正确？",o:["(x+3)²=4","(x+6)²=31","(x+3)²=5","(x−3)²=4"],a:0,e:"移项得 x²+6x=−5，两边加 9，得到 (x+3)²=4。"}]},
+{id:5,title:"求根公式",short:"公式解方程",goal:"知道公式里的 a、b、c 从哪里来，并能代入简单方程。",body:'<div class="formula">x = (−b ± √(b²−4ac)) / 2a</div><p>先把方程整理成 ax²+bx+c=0，再找出 a、b、c，代入公式。最容易出错的是 b 的符号，以及分母 2a。</p><div class="example"><b>例子：</b><br>x²−5x+6=0，a=1,b=−5,c=6。<br>x=(5±√(25−24))/2=(5±1)/2。<br>所以 x=3 或 x=2。</div>',qs:[
+{q:"方程 2x² − 3x + 1 = 0 中，a、b、c 分别是？",o:["2，−3，1","2，3，1","−3，2，1","1，−3，2"],a:0,e:"按 x²、x、常数项的顺序读系数：a=2，b=−3，c=1。"},
+{q:"方程 x² − 5x + 6 = 0 的解是？",o:["x=1 或 6","x=2 或 3","x=−2 或 −3","x=5 或 6"],a:1,e:"可因式分解为 (x−2)(x−3)=0，所以 x=2 或 3；公式法也会得到相同答案。"},
+{q:"求根公式分子中的第一项是？",o:["b","−b","b²","4ac"],a:1,e:"公式是 x=(−b±√(b²−4ac))/(2a)，注意是负 b，不是 b。"}]},
+{id:6,title:"判别式：有几个实数根",short:"看根的数量",goal:"会计算 Δ=b²−4ac，并用它判断实数根的个数。",body:'<div class="formula">Δ = b² − 4ac</div><p>Δ>0：两个不同的实数根；Δ=0：两个根相同，只有一个不同的实数根；Δ<0：没有实数根。</p><div class="example"><b>例子：</b><br>x²−4x+4=0：Δ=16−16=0，有一个不同的实数根 x=2。<br>x²+1=0：Δ=−4，没有实数根。</div>',qs:[
+{q:"方程 x² − 4x + 4 = 0 的判别式 Δ 是多少？",o:["−4","0","4","16"],a:1,e:"a=1,b=−4,c=4，所以 Δ=(−4)²−4×1×4=16−16=0。"},
+{q:"若 Δ > 0，一元二次方程有几个不同的实数根？",o:["没有","1 个","2 个","无法判断"],a:2,e:"判别式大于 0 时，平方根部分为正数，公式中的 ± 给出两个不同实数根。"},
+{q:"方程 x² + 4 = 0 在实数范围内？",o:["有两个根","有一个根","没有实数根","根是 4 和 −4"],a:2,e:"x² 不可能小于 0，因此不可能等于 −4；判别式 Δ=−16<0。"}]},
+{id:7,title:"选择合适的解法",short:"先观察，再动手",goal:"练习先看方程的结构，选择更简单可靠的解法。",body:'<p>不是每道题都要硬套求根公式。先观察：</p><div class="example"><b>只有 x²：</b>先考虑开平方。<br><b>容易拆成两个因数：</b>先考虑因式分解。<br><b>一般形式，分解不明显：</b>可以用求根公式。<br><b>题目要求配方或研究结构：</b>使用配方法。</div><p>选择方法的目标是减少步骤，同时保证不漏解。</p>',qs:[
+{q:"解 x² − 16 = 0，通常最直接的方法是？",o:["开平方或平方差分解","一定要先配方","只用判别式","无法求解"],a:0,e:"x²=16 可直接开平方，也可用平方差公式，没必要增加复杂步骤。"},
+{q:"解 x² + 5x + 6 = 0，最方便的方法通常是？",o:["因式分解","把 x 当作常数","只算判别式不求根","直接开平方 x²=−5x−6"],a:0,e:"两个数相乘为 6、相加为 5，是 2 和 3，因此可以很快分解。"},
+{q:"若方程难以直接因式分解，且要求求出根，哪种方法通常可通用？",o:["只看 a 的正负","求根公式","把常数项删掉","只求判别式"],a:1,e:"在实数范围内，求根公式适用于所有一元二次方程；Δ<0 时会判断出无实数根。"}]},
+{id:8,title:"应用题：把情境变成方程",short:"列方程解决问题",goal:"先设未知数，找出数量关系，列出方程，再检验答案是否符合实际。",body:'<div class="example"><b>例子：</b>一个长方形的长比宽多 3，面积为 40。<br>设宽为 x，则长为 x+3。<br>面积关系：x(x+3)=40。<br>整理：x²+3x−40=0。<br>分解： (x+8)(x−5)=0，得到 x=−8 或 x=5。<br>宽不能是负数，所以宽为 5，长为 8。</div><p>应用题求出方程的根后，别忘了检查是否符合题意。</p>',qs:[
+{q:"长方形宽为 x，长比宽多 2，面积是 24。哪个方程正确？",o:["x(x+2)=24","2x+2=24","x²+2=24","x(x−2)=24"],a:0,e:"长为 x+2，面积=长×宽，所以 x(x+2)=24。"},
+{q:"解应用题得到 x=−4 或 x=6，而 x 表示一段长度，应选？",o:["−4","6","两个都选","都不选"],a:1,e:"长度不能是负数，所以舍去 −4，保留 6。"},
+{q:"一个数的平方比这个数的 5 倍少 6，设这个数为 x，方程是？",o:["x²=5x−6","x²=5x+6","5x²=x−6","x²−5x−6=0"],a:0,e:"“平方比 5 倍少 6”表示 x²=5x−6；移项后是 x²−5x+6=0。"}]}
+];
+const KEY="genshi_quadratic_course_v1";
+let state=loadState(),active=1,qi=0,score=0,answered=false,results=[];
+function loadState(){try{return JSON.parse(localStorage.getItem(KEY))||{passed:[],best:{},tries:{}}}catch(e){return {passed:[],best:{},tries:{}}}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+function unlocked(id){return id===1||state.passed.includes(id-1)}
+function show(id){["home","lesson","quiz","result"].forEach(x=>document.getElementById(x).classList.toggle("hidden",x!==id));window.scrollTo(0,0)}
+function renderHome(){const count=state.passed.length;document.getElementById("progressText").textContent=count+" / 8 关掌握";document.getElementById("progressBar").style.width=count/8*100+"%";document.getElementById("encourage").textContent=count===8?"全部掌握啦！可以回头复习，或者把学校作业中的题拿来逐步分析。":count?"已经完成 "+count+" 关。建议一次专心练一关，错题先弄懂原因。":"先从第一关开始，不需要一次学完。";
+document.getElementById("units").innerHTML=units.map(u=>{const lock=!unlocked(u.id),done=state.passed.includes(u.id);return '<button class="unit '+(done?'done ':'')+(lock?'locked':'')+'" '+(lock?'disabled':'')+' onclick="openUnit('+u.id+')"><span class="tag">第 '+u.id+' 关 '+(done?'✓':lock?'🔒':'')+'</span><strong>'+u.title+'</strong><small>'+(done?'已通过 · 最佳 '+(state.best[u.id]||0)+'/3':u.short)+'</small></button>'}).join("")}
+function toHome(){renderHome();show("home")}
+function openUnit(id){if(!unlocked(id))return;active=id;const u=units[id-1];document.getElementById("lessonCount").textContent="第 "+id+" / 8 关";document.getElementById("unitLabel").textContent="学习目标 · "+u.short;document.getElementById("lessonTitle").textContent=u.title;document.getElementById("lessonGoal").textContent=u.goal;document.getElementById("lessonBody").innerHTML=u.body;show("lesson")}
+function startQuiz(){qi=0;score=0;answered=false;results=[];show("quiz");renderQuestion()}
+function renderQuestion(){const q=units[active-1].qs[qi];answered=false;document.getElementById("qCount").textContent="第 "+(qi+1)+" / 3 题";document.getElementById("qBar").style.width=qi/3*100+"%";document.getElementById("qSkill").textContent="第 "+active+" 关 · 小技能练习";document.getElementById("qText").textContent=q.q;document.getElementById("feedback").className="feedback hidden";document.getElementById("nextBtn").classList.add("hidden");document.getElementById("choices").innerHTML=q.o.map((s,i)=>'<button class="choice" onclick="answer('+i+')">'+String.fromCharCode(65+i)+'. '+s+'</button>').join("")}
+function answer(i){if(answered)return;answered=true;const q=units[active-1].qs[qi],ok=i===q.a;if(ok)score++;results.push(ok);document.querySelectorAll(".choice").forEach((b,j)=>{b.disabled=true;if(j===q.a)b.classList.add("right");else if(j===i)b.classList.add("wrong")});const f=document.getElementById("feedback");f.className="feedback "+(ok?"good":"bad");f.innerHTML="<b>"+(ok?"答对啦！":"这题先弄懂，再继续。")+"</b><br>"+q.e;const n=document.getElementById("nextBtn");n.classList.remove("hidden");n.textContent=qi===2?"查看本关结果 →":"下一题 →"}
+function nextQuestion(){if(!answered)return;if(qi<2){qi++;renderQuestion()}else finish()}
+function finish(){const passed=score>=2;if(passed&&!state.passed.includes(active))state.passed.push(active);state.tries[active]=(state.tries[active]||0)+1;state.best[active]=Math.max(state.best[active]||0,score);save();document.getElementById("resultEmoji").textContent=score===3?"🌟":passed?"🎉":"🧱";document.getElementById("resultTitle").textContent=score===3?"本关全对！":passed?"本关通过！":"再练一次就更稳";document.getElementById("resultText").textContent=passed?"你答对了 "+score+" 道。"+(score===3?"这组题全部答对，做得很稳！":"达到通过标准，记得复述一下解题思路。"):"答对 "+score+" 道，本关需要至少 2 道正确。看看错题解释，再试一次。";document.getElementById("resultScore").textContent=score+" / 3 正确";document.getElementById("resultAdvice").textContent=score===3?"小挑战：不看讲解，自己讲一遍这关的方法。":passed?"建议下次再做一组，确认不是碰巧答对。":"不要急着往后赶。回到上面的讲解，找出卡住的那一步。";document.getElementById("resultNext").classList.toggle("hidden",!passed||active===8);document.getElementById("resultNext").textContent=active===8?"返回课程目录 🎓":"继续第 "+(active+1)+" 关 →";show("result")}
+function nextUnit(){if(active===8){toHome();return}openUnit(active+1)}
+function retryUnit(){openUnit(active);startQuiz()}
+renderHome();
+</script></body></html>
