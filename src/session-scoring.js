@@ -62,6 +62,10 @@ const SKILL_LABELS = {
   "7-add-subtract":"合并同类二次根式", "8-multiply-divide":"根式乘除", "8-equation":"根式相关方程", "8-rationalize":"分母有理化"
 };
 function classifyQuestion(q) {
+  // Explicit author-assigned tags always win over text heuristics.
+  if (q && typeof q.skillId === "string" && q.skillId && q.skillId !== "unknown") {
+    return { id: q.skillId, label: q.skillLabel || SKILL_LABELS[q.skillId] || "自定义技能" };
+  }
   const level = Number(q && q.kp) || 0;
   const source = [q && q.stem, q && q.hint, ...((q && q.steps) || [])].join(" ").replace(/<[^>]*>/g, " ");
   let key = "";
@@ -76,6 +80,30 @@ function classifyQuestion(q) {
   else return { id: "unknown", label: "待识别技能" };
   const id = level + "-" + key;
   return { id, label: SKILL_LABELS[id] || "基础技能" };
+}
+const SKILL_PREREQUISITES = {
+  "2-radicand": ["1-square-root"],
+  "2-combined": ["1-square-root", "2-radicand"],
+  "3-absolute-value": ["1-arithmetic-root"],
+  "3-sign": ["1-arithmetic-root", "2-radicand"],
+  "3-expression": ["1-arithmetic-root", "2-radicand"],
+  "4-factor": ["1-square-root"],
+  "4-fraction": ["1-decimal-fraction"],
+  "4-rationalize": ["1-square-root", "2-denominator"],
+  "5-simplest": ["1-square-root", "4-factor"],
+  "6-like-radicals": ["4-factor", "5-simplest"],
+  "7-add-subtract": ["5-simplest", "6-like-radicals"],
+  "8-multiply-divide": ["4-factor", "6-like-radicals"],
+  "8-equation": ["2-radicand", "7-add-subtract"],
+  "8-rationalize": ["4-rationalize", "6-like-radicals"]
+};
+function getSkillPlan(skillId) {
+  const current = { id: skillId, label: SKILL_LABELS[skillId] || "基础技能" };
+  const prerequisites = (SKILL_PREREQUISITES[skillId] || []).map(id => {
+    const level = Number(id.split("-")[0]);
+    return { id, level, label: SKILL_LABELS[id] || "基础技能" };
+  });
+  return { current, prerequisites, firstLevel: prerequisites.length ? prerequisites[0].level : Number(String(skillId).split("-")[0]) || 1 };
 }
 function recommendSubskill(attempts) {
   const list = Array.isArray(attempts) ? attempts : [];
@@ -96,4 +124,4 @@ function skillSnapshot(history) {
   const status = !count ? "未练习" : count < 3 ? "样本较少" : percent < 60 ? "优先巩固" : percent < 80 ? "继续练习" : "暂时掌握较好";
   return { count, percent, status };
 }
-if (typeof module !== "undefined" && module.exports) module.exports = Object.assign(officialQuizScore, { shouldAddVariant, skillSnapshot, recommendSkill, classifyQuestion, recommendSubskill });
+if (typeof module !== "undefined" && module.exports) module.exports = Object.assign(officialQuizScore, { shouldAddVariant, skillSnapshot, recommendSkill, classifyQuestion, recommendSubskill, getSkillPlan });
