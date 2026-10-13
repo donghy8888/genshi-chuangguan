@@ -499,8 +499,8 @@ const BADGES=[
 
 /* ================= 存档 ================= */
 const KEY='genshi_chuangguan_v1';
-const DEF={v:1,xp:0,levels:{},boss:{passed:false,best:0,stars:0},wrong:[],sessionNo:0,checkins:[],badges:{},kp:{},tot:{ans:0,cor:0},maxCombo:0,sound:false,lessonSeen:{},sheets:[],sheetUnlock:[],study:{todayMs:0,todayDate:'',byDate:{},totalMs:0,longestSessionMs:0,sessionsCount:0}};
-function load(){try{const raw=JSON.parse(localStorage.getItem(KEY)||'null');const o=Object.assign(JSON.parse(JSON.stringify(DEF)),raw||{});if(!o.lessonSeen)o.lessonSeen={};if(!o.sheets)o.sheets=[];if(!o.sheetUnlock)o.sheetUnlock=[];o.study=Object.assign(JSON.parse(JSON.stringify(DEF.study)),o.study||{});if(!o.study.byDate)o.study.byDate={};return o;}catch(e){return JSON.parse(JSON.stringify(DEF));}}
+const DEF={v:1,xp:0,levels:{},boss:{passed:false,best:0,stars:0},wrong:[],sessionNo:0,checkins:[],badges:{},kp:{},tot:{ans:0,cor:0},maxCombo:0,sound:false,lessonSeen:{},sheets:[],sheetUnlock:[],attempts:[],study:{todayMs:0,todayDate:'',byDate:{},totalMs:0,longestSessionMs:0,sessionsCount:0}};
+function load(){try{const raw=JSON.parse(localStorage.getItem(KEY)||'null');const o=Object.assign(JSON.parse(JSON.stringify(DEF)),raw||{});if(!o.lessonSeen)o.lessonSeen={};if(!o.sheets)o.sheets=[];if(!o.sheetUnlock)o.sheetUnlock=[];if(!Array.isArray(o.attempts))o.attempts=[];o.study=Object.assign(JSON.parse(JSON.stringify(DEF.study)),o.study||{});if(!o.study.byDate)o.study.byDate={};return o;}catch(e){return JSON.parse(JSON.stringify(DEF));}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 let S=load();
 function ds(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');}
@@ -559,10 +559,14 @@ function studyEncourage(){ensureStudyDay();const todayMs=S.study.todayMs||0;cons
  if((S.study.totalMs||0)>0)return '🌱 每天一点点，根号会越来越乖的。';
  return '⏱️ 开始答题后会自动计时，首页能看到你的努力～';}
 function studyCardHtml(){ensureStudyDay();const tMs=S.study.todayMs||0,tot=S.study.totalMs||0;
+ const todays=(S.attempts||[]).filter(a=>a.date===today()&&!a.variant);
+ const n=todays.length,correct=todays.filter(a=>a.firstCorrect).length,hinted=todays.filter(a=>a.hintUsed).length;
+ const avg=n?Math.round(todays.reduce((sum,a)=>sum+(a.firstTimeMs||0),0)/n):0;
  return `<div class="card timecard" id="studyCard"><div class="row"><div style="font-size:34px">⏱️</div><div class="sp"><div style="font-size:18px;font-weight:900">学习时长</div><div class="sub">只在答题时计时 · 切到后台会暂停</div></div></div>
  <div class="row" style="margin-top:12px;gap:16px"><div class="sp center"><div class="tbig" id="homeTodayDur">${fmtDur(tMs)}</div><div class="tlab">今日学习</div></div>
  <div class="sp center"><div class="tbig">${fmtDur(tot)}</div><div class="tlab">累计学习</div></div></div>
  <div class="sub" style="margin-top:12px;font-weight:800">本周学习</div>${weekStudyBars()}
+ ${n?`<div class="pill" style="margin-top:10px">今日首答：${correct}/${n} 正确 · 提示 ${hinted} 题 · 平均每题 ${fmtDurCN(avg)}</div>`:''}
  <div class="encourage">${studyEncourage()}</div>
  ${(S.study.sessionsCount||0)?`<div class="sub" style="margin-top:8px">练习 ${S.study.sessionsCount} 次 · 最长一次 ${fmtDurCN(S.study.longestSessionMs||0)}</div>`:''}</div>`;}
 
@@ -621,7 +625,7 @@ function beginQuiz(mode,lv){let qs;
  else{const due=shuffle(dueWrong()).slice(0,3).map(w=>({q:w.q,sr:w.id}));const L=curLevel()||rnd(1,8);const used=new Set(due.map(d=>d.q.id));
   const fresh=genLevel(L,5).filter(x=>!used.has(x.q.id));qs=due.concat(fresh).slice(0,5);while(qs.length<5)qs.push({q:genFrom(rnd(1,8),used)});}
  sess={mode,lv,qs,i:0,correct:0,combo:0,usedHint:false,xp:0,locked:false,hint:false,choice:-1};pendingSess=null;closeModal();startStudyTimer();go('quiz');}
-function cur(){return sess.qs[sess.i];}
+function cur(){const it=sess.qs[sess.i];if(it&&it.startStudyMs===undefined)it.startStudyMs=studyClock.sessionMs;return it;}
 function pickOpt(j){if(!sess||sess.locked)return;sess.choice=j;judge(j===cur().q.answer);}
 function normNum(s){s=String(s).trim().replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-65248)).replace(/[．。]/g,'.').replace(/[−－—]/g,'-').replace(/\s/g,'');
  if(/^-?\d+\/\d+$/.test(s)){const p=s.split('/');return Number(p[0])/Number(p[1]);}if(!/^-?(\d+\.?\d*|\.\d+)$/.test(s))return NaN;return Number(s);}
@@ -633,8 +637,11 @@ function addWrong(q,meta){meta=meta||{};const t=today();const ex=S.wrong.find(w=
  S.wrong.push({id:'w'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),qid:q.id,q,kp:q.kp,streak:0,due:t,after:S.sessionNo,mastered:false,added:t,miss:1,fromSheet:!!meta.fromSheet});}
 function judge(ok){
  const it=cur(),q=it.q;
+ // Measure active study time, excluding time spent with the page in the background.
+ studyAccrue(Date.now());
  // A retry is another attempt at the same learning item, not a second new question.
  const isRetry=it.retryStage===1;
+ const elapsed=Math.max(0,studyClock.sessionMs-(isRetry?(it.retryStartStudyMs??studyClock.sessionMs):(it.startStudyMs??studyClock.sessionMs)));
  sess.locked=true;sess.last=ok;it.res=ok?1:0;if(!isRetry)it.firstRes=ok?1:0;
  if(!isRetry){
   S.tot.ans++;
@@ -650,7 +657,14 @@ function judge(ok){
   if(ok){confetti(sess.combo>=3?55:32);floatTxt(`+${gain} XP`);beep('ok');}else{document.querySelectorAll('.cf').forEach(c=>c.remove());beep('no');}
  }else{
   // Retry feedback does not double-count stats, XP, combo, or wrong-book entries.
-  if(ok){beep('ok');}else{beep('no');}
+  if(it.attemptLog){it.attemptLog.retryCorrect=!!ok;it.attemptLog.retryTimeMs=elapsed;}
+  save();if(ok){beep('ok');}else{beep('no');}
+ }
+ if(!isRetry){
+  it.firstTimeMs=elapsed;
+  it.attemptLog={date:today(),questionId:q.id,kp:q.kp,mode:sess.mode,variant:!!it.isVariant,firstCorrect:!!ok,hintUsed:!!it.hintUsed,firstTimeMs:elapsed};
+  S.attempts.push(it.attemptLog);if(S.attempts.length>500)S.attempts.splice(0,S.attempts.length-500);
+  save();
  }
  showSheet(ok,it);
 }
@@ -670,10 +684,10 @@ function showSheet(ok,it){const q=it.q;const sh=document.getElementById('sheet')
  ${extra}<button class="btn ${ok?'ok':'pri'} block" id="nextBtn" style="margin-top:14px" onclick="${retryButton?'retryOriginal()':'nextQ()'}">${retryButton?'我明白了，重做原题 ↻':(sess.i+1>=sess.qs.length?'看看成绩 🏁':(ok?'下一题 →':'继续下一步 →'))}</button>`;
  inn.scrollTop=0;sh.classList.add('show');}
 function hideSheet(){document.getElementById('sheet').classList.remove('show');}
-function retryOriginal(){if(!sess)return;const it=cur();it.retryStage=1;hideSheet();sess.locked=false;sess.hint=false;sess.choice=-1;sess.fillVal='';render();window.scrollTo(0,0);}
+function retryOriginal(){if(!sess)return;const it=cur();it.retryStage=1;it.retryStartStudyMs=studyClock.sessionMs;hideSheet();sess.locked=false;sess.hint=false;sess.choice=-1;sess.fillVal='';render();window.scrollTo(0,0);}
 function nextQ(){if(!sess)return;hideSheet();const it=cur();if(it.retryStage===1&&it.res===1&&!it.variantAdded){it.variantAdded=true;const lv=it.q.kp;const gens=G[lv];if(gens&&gens.length){let q2=null;for(let n=0;n<12;n++){const candidate=pick(gens)();candidate.kp=lv;if(candidate.id!==it.q.id){q2=candidate;break;}}if(q2)sess.qs.splice(sess.i+1,0,{q:q2,isVariant:true});}}
  sess.i++;sess.locked=false;sess.hint=false;sess.choice=-1;if(sess.i>=sess.qs.length)finish();else{render();window.scrollTo(0,0);}}
-function useHint(){sess.hint=true;sess.usedHint=true;render();}
+function useHint(){sess.hint=true;sess.usedHint=true;cur().hintUsed=true;render();}
 function quitQuiz(){modal(`<div class="center">${mascot('normal',70)}<h2>要先休息一下吗？</h2><p class="sub">已经答过的题会记录下来，但这一轮不算完成哦。</p></div>
  <div class="stack"><button class="btn pur block" onclick="closeModal()">继续答题 💪</button><button class="btn ghost block" onclick="closeModal();hideSheet();stopStudyTimer();sess=null;go('home')">先休息一下</button></div>`);}
 function finish(){const s=sess;const score=officialQuizScore(s.qs);const tot=score.tot,c=score.c;const r={mode:s.mode,lv:s.lv,c,tot,xp:s.xp,stars:0,pass:false};
