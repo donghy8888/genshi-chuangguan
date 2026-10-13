@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
 const officialQuizScore = require("../src/session-scoring.js");
 const shouldAddVariant = officialQuizScore.shouldAddVariant;
 const skillSnapshot = officialQuizScore.skillSnapshot;
+const recommendSkill = officialQuizScore.recommendSkill;
 
 test("retry success does not overwrite a first-attempt mistake", () => {
   const qs = [{ firstRes: 0, res: 1 }, { firstRes: 1, res: 1 }];
@@ -67,4 +68,25 @@ test("unpracticed skills are not mistaken for zero-percent mastery", () => {
 
 test("skill diagnostics ignore malformed history entries", () => {
   assert.deepEqual(skillSnapshot([1, 0, null, "1", 7]), { count: 2, percent: 50, status: "样本较少" });
+});
+
+test("diagnostic recommends the earliest under-practiced prerequisite first", () => {
+  const histories = Array.from({ length: 8 }, () => [1, 1, 1, 1]);
+  histories[0] = [1, 0];
+  histories[5] = [0, 0, 0, 0];
+  assert.deepEqual(recommendSkill(histories), {
+    level: 1, reason: "先补足基础练习样本", count: 2, percent: 50, status: "样本较少"
+  });
+});
+
+test("diagnostic prioritizes a demonstrated weak skill after sample size is sufficient", () => {
+  const histories = Array.from({ length: 8 }, () => [1, 1, 1, 1]);
+  histories[2] = [1, 0, 0, 0];
+  assert.equal(recommendSkill(histories).level, 3);
+  assert.equal(recommendSkill(histories).percent, 25);
+});
+
+test("diagnostic recommends a mixed challenge when all skills are stable", () => {
+  const histories = Array.from({ length: 8 }, () => [1, 1, 1, 1]);
+  assert.equal(recommendSkill(histories).level, null);
 });
