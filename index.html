@@ -295,6 +295,10 @@ const SKILL_LABELS = {
   "7-add-subtract":"合并同类二次根式", "8-multiply-divide":"根式乘除", "8-equation":"根式相关方程", "8-rationalize":"分母有理化"
 };
 function classifyQuestion(q) {
+  // Explicit author-assigned tags always win over text heuristics.
+  if (q && typeof q.skillId === "string" && q.skillId && q.skillId !== "unknown") {
+    return { id: q.skillId, label: q.skillLabel || SKILL_LABELS[q.skillId] || "自定义技能" };
+  }
   const level = Number(q && q.kp) || 0;
   const source = [q && q.stem, q && q.hint, ...((q && q.steps) || [])].join(" ").replace(/<[^>]*>/g, " ");
   let key = "";
@@ -309,6 +313,30 @@ function classifyQuestion(q) {
   else return { id: "unknown", label: "待识别技能" };
   const id = level + "-" + key;
   return { id, label: SKILL_LABELS[id] || "基础技能" };
+}
+const SKILL_PREREQUISITES = {
+  "2-radicand": ["1-square-root"],
+  "2-combined": ["1-square-root", "2-radicand"],
+  "3-absolute-value": ["1-arithmetic-root"],
+  "3-sign": ["1-arithmetic-root", "2-radicand"],
+  "3-expression": ["1-arithmetic-root", "2-radicand"],
+  "4-factor": ["1-square-root"],
+  "4-fraction": ["1-decimal-fraction"],
+  "4-rationalize": ["1-square-root", "2-denominator"],
+  "5-simplest": ["1-square-root", "4-factor"],
+  "6-like-radicals": ["4-factor", "5-simplest"],
+  "7-add-subtract": ["5-simplest", "6-like-radicals"],
+  "8-multiply-divide": ["4-factor", "6-like-radicals"],
+  "8-equation": ["2-radicand", "7-add-subtract"],
+  "8-rationalize": ["4-rationalize", "6-like-radicals"]
+};
+function getSkillPlan(skillId) {
+  const current = { id: skillId, label: SKILL_LABELS[skillId] || "基础技能" };
+  const prerequisites = (SKILL_PREREQUISITES[skillId] || []).map(id => {
+    const level = Number(id.split("-")[0]);
+    return { id, level, label: SKILL_LABELS[id] || "基础技能" };
+  });
+  return { current, prerequisites, firstLevel: prerequisites.length ? prerequisites[0].level : Number(String(skillId).split("-")[0]) || 1 };
 }
 function recommendSubskill(attempts) {
   const list = Array.isArray(attempts) ? attempts : [];
@@ -868,7 +896,7 @@ function vWrong(){const act=activeWrong(),due=dueWrong(),mas=S.wrong.filter(w=>w
  const recommendation=recommendSkill(LV.map((_,i)=>S.kp[i+1]||[]));
  const subskillRecommendation=recommendSubskill(S.attempts);
  const subskillCard=subskillRecommendation
-  ? `<div class="card"><h2>🔎 具体技能诊断</h2><div style="font-weight:900;font-size:16px">${subskillRecommendation.label}</div><div class="sub" style="margin:7px 0;line-height:1.6">已有 ${subskillRecommendation.total} 次首答记录，正确率 ${subskillRecommendation.percent}%。建议先回到对应知识点练习，再用新题检查是否改善。</div><button class="btn sec block" onclick="startSession('level',${Number(subskillRecommendation.id.split('-')[0])})">练习对应知识点 →</button><div class="sub" style="margin-top:7px">这是根据题目文字的初步标签生成的建议；复杂题的精确步骤诊断仍需后续完善。</div></div>`
+  ? (()=>{const plan=getSkillPlan(subskillRecommendation.id);return `<div class="card"><h2>🔎 具体技能诊断</h2><div style="font-weight:900;font-size:16px">${subskillRecommendation.label}</div><div class="sub" style="margin:7px 0;line-height:1.6">已有 ${subskillRecommendation.total} 次首答记录，正确率 ${subskillRecommendation.percent}%。建议先检查前置技能，再练当前技能，最后用新题检验。</div>${plan.prerequisites.length?`<div class="sub" style="margin:6px 0">建议顺序：${plan.prerequisites.map(p=>p.label).join(' → ')} → ${plan.current.label}</div><button class="btn sec block" onclick="startSession('level',${plan.firstLevel})">先复习前置知识（第 ${plan.firstLevel} 关）→</button>`:`<button class="btn sec block" onclick="startSession('level',${plan.firstLevel})">练习对应知识点 →</button>`}<div class="sub" style="margin-top:7px">技能标签目前由题目文字初步判断；个别题目可在题库中手动指定技能标签。</div></div>`;})()`
   : `<div class="card"><h2>🔎 具体技能诊断</h2><div class="sub" style="line-height:1.6">每个技能至少积累 3 次首答记录后，才会显示薄弱技能建议。目前还没有足够的同类题记录。</div></div>`;
  const recommendationCard= recommendation.level
   ? `<div class="card"><h2>🧭 下一步学什么？</h2><div style="font-weight:900;font-size:17px">${LV[recommendation.level-1].icon} ${LV[recommendation.level-1].name}</div><div class="sub" style="line-height:1.6;margin:7px 0">${recommendation.reason}。当前记录：${recommendation.count} 题，正确率 ${recommendation.percent}%。先把这一块练稳，再往后推进。</div><button class="btn pri block" onclick="startSession('level',${recommendation.level})">开始这组基础练习 →</button></div>`
