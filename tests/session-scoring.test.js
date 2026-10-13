@@ -7,6 +7,7 @@ const skillSnapshot = officialQuizScore.skillSnapshot;
 const recommendSkill = officialQuizScore.recommendSkill;
 const classifyQuestion = officialQuizScore.classifyQuestion;
 const recommendSubskill = officialQuizScore.recommendSubskill;
+const getSkillPlan = officialQuizScore.getSkillPlan;
 
 test("retry success does not overwrite a first-attempt mistake", () => {
   const qs = [{ firstRes: 0, res: 1 }, { firstRes: 1, res: 1 }];
@@ -118,4 +119,22 @@ test("subskill diagnostic ignores supplemental variant attempts", () => {
     { skillId: "4-factor", firstCorrect: true, variant: true }
   ];
   assert.equal(recommendSubskill(attempts).total, 3);
+});
+
+test("explicit author skill tags override heuristic classification", () => {
+  assert.deepEqual(classifyQuestion({ kp: 7, stem: "根式加减", skillId: "2-radicand", skillLabel: "自定义被开方数条件" }), {
+    id: "2-radicand", label: "自定义被开方数条件"
+  });
+});
+
+test("skill plans expose prerequisite skills in a stable learning order", () => {
+  const plan = getSkillPlan("7-add-subtract");
+  assert.equal(plan.current.label, "合并同类二次根式");
+  assert.deepEqual(plan.prerequisites.map(p => p.id), ["5-simplest", "6-like-radicals"]);
+  assert.equal(plan.firstLevel, 5);
+});
+
+test("a foundational skill without declared prerequisites starts at its own level", () => {
+  assert.equal(getSkillPlan("1-square-root").firstLevel, 1);
+  assert.deepEqual(getSkillPlan("1-square-root").prerequisites, []);
 });
