@@ -182,15 +182,18 @@ function stepsHtml(q){return `<div class="steps"><b>📖 讲解</b><ol>${q.steps
 function showSheet(ok,it){const q=it.q;const sh=document.getElementById('sheet');const inn=sh.querySelector('.in');
  let extra='';if(it.sr&&ok)extra=it.mastered?'<div class="pill g">🎉 这道错题已经掌握啦！</div>':'<div class="pill g">复习进度 +1，再对几次就掌握啦</div>';
  if(!ok)extra='<div class="pill o">已放进错题本，过几天再来挑战它 📒</div>';
+ const retryButton=!ok&&it.retryStage!==1;
  inn.className='in '+(ok?'ok':'no');
  inn.innerHTML=`<div class="fbh">${mascot(ok?'happy':'think',58)}<div><div class="t">${ok?pick(PRAISE):pick(COMFORT)}</div>
- <div class="sub">${ok?(sess.combo>=2?`连击 ×${sess.combo}！继续保持 🔥`:'继续加油！'):'认真思考也有 +2 XP 哦'}</div></div></div>
+ <div class="sub">${ok?(sess.combo>=2?`连击 ×${sess.combo}！继续保持 🔥`:'继续加油！'):(retryButton?'先看懂讲解，再把这道题独立做出来。':'没关系，再看一遍讲解，我们再试一次。')}</div></div></div>
  ${ok?'':`<div class="ansline">💡 ${q.hint}</div><div class="ansline">正确答案：${ansHtml(q)}</div>`}
  ${ok?`<details style="margin-top:10px"><summary class="sub" style="font-weight:700">看看讲解 ▸</summary>${stepsHtml(q)}</details>`:stepsHtml(q)}
- ${extra}<button class="btn ${ok?'ok':'pri'} block" id="nextBtn" style="margin-top:14px" onclick="nextQ()">${sess.i+1>=sess.qs.length?'看看成绩 🏁':(ok?'下一题 →':'我明白了，下一题 →')}</button>`;
+ ${extra}<button class="btn ${ok?'ok':'pri'} block" id="nextBtn" style="margin-top:14px" onclick="${retryButton?'retryOriginal()':'nextQ()'}">${retryButton?'我明白了，重做原题 ↻':(sess.i+1>=sess.qs.length?'看看成绩 🏁':(ok?'下一题 →':'继续下一步 →'))}</button>`;
  inn.scrollTop=0;sh.classList.add('show');}
 function hideSheet(){document.getElementById('sheet').classList.remove('show');}
-function nextQ(){if(!sess)return;hideSheet();sess.i++;sess.locked=false;sess.hint=false;sess.choice=-1;if(sess.i>=sess.qs.length)finish();else{render();window.scrollTo(0,0);}}
+function retryOriginal(){if(!sess)return;const it=cur();it.retryStage=1;hideSheet();sess.locked=false;sess.hint=false;sess.choice=-1;sess.fillVal='';render();window.scrollTo(0,0);}
+function nextQ(){if(!sess)return;hideSheet();const it=cur();if(it.retryStage===1&&it.res===1&&!it.variantAdded){it.variantAdded=true;const lv=it.q.kp;const gens=G[lv];if(gens&&gens.length){let q2=null;for(let n=0;n<12;n++){const candidate=pick(gens)();candidate.kp=lv;if(candidate.id!==it.q.id){q2=candidate;break;}}if(q2)sess.qs.splice(sess.i+1,0,{q:q2,isVariant:true});}}
+ sess.i++;sess.locked=false;sess.hint=false;sess.choice=-1;if(sess.i>=sess.qs.length)finish();else{render();window.scrollTo(0,0);}}
 function useHint(){sess.hint=true;sess.usedHint=true;render();}
 function quitQuiz(){modal(`<div class="center">${mascot('normal',70)}<h2>要先休息一下吗？</h2><p class="sub">已经答过的题会记录下来，但这一轮不算完成哦。</p></div>
  <div class="stack"><button class="btn pur block" onclick="closeModal()">继续答题 💪</button><button class="btn ghost block" onclick="closeModal();hideSheet();stopStudyTimer();sess=null;go('home')">先休息一下</button></div>`);}
