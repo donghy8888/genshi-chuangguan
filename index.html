@@ -269,9 +269,6 @@ function shouldAddVariant(item, attempts) {
   const median = history.length % 2 ? history[mid] : (history[mid-1] + history[mid]) / 2;
   return median > 0 && item.firstTimeMs > median * 1.5;
 }
-  officialQuizScore.shouldAddVariant = shouldAddVariant;
-  module.exports = officialQuizScore;
-}
 "use strict";
 /* ================= 数学排版 ================= */
 const SQ='<span class="rs"><svg viewBox="0 0 10 20" preserveAspectRatio="none"><path d="M0.5 11.5 L2.6 10.4 L5.4 19 L9.6 0.5 L10.5 0.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg></span>';
