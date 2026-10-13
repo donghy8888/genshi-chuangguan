@@ -311,8 +311,9 @@ function vResult(){const r=lastRes;if(!r)return vHome();let head,body='';
  return `<div class="card res" style="margin-top:30px">${head}${body}<div class="stack">${btns}</div></div>`;}
 function dueTxt(w){const t=today();if(w.due<=t)return w.after>S.sessionNo?'下一轮练习复习':'今天可复习';if(w.due===addDays(t,1))return '明天复习';const p=w.due.split('-');return `${+p[1]}月${+p[2]}日复习`;}
 function vWrong(){const act=activeWrong(),due=dueWrong(),mas=S.wrong.filter(w=>w.mastered).length;
- const kps=LV.map((l,i)=>{const a=S.kp[i+1]||[];const pct=a.reduce((x,y)=>x+y,0)*10;const nw=act.filter(w=>w.kp===i+1).length;
-  return `<div class="kp"><div class="row"><span>${l.icon} ${l.name}</span><span class="sp"></span><span class="sub">${a.length?pct+'%':'未练习'}${nw?` · 待复习 ${nw}`:''}</span></div><div class="prog" style="height:12px;margin-top:5px"><i style="width:${pct}%;${pct>=80?'background:linear-gradient(90deg,#4ade80,#22c55e)':''}"></i></div></div>`;}).join('');
+ const kps=LV.map((l,i)=>{const a=S.kp[i+1]||[];const pct=a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length*100):0;const nw=act.filter(w=>w.kp===i+1).length;
+  const status=!a.length?'未练习':a.length<3?'样本较少':pct<60?'优先巩固':pct<80?'继续练习':'暂时掌握较好';
+  return `<div class="kp"><div class="row"><span>${l.icon} ${l.name}</span><span class="sp"></span><span class="sub">${a.length?`近${a.length}题 ${pct}% · ${status}`:'未练习'}${nw?` · 待复习 ${nw}`:''}</span></div><div class="prog" style="height:12px;margin-top:5px"><i style="width:${pct}%;${pct>=80?'background:linear-gradient(90deg,#4ade80,#22c55e)':''}"></i></div></div>`;}).join('');
  const items=act.slice().sort((a,b)=>a.due<b.due?-1:1).map(w=>`<details class="witem"><summary><div class="row" style="margin-bottom:4px"><span class="pill">${LV[w.kp-1].short}</span>${w.fromSheet?'<span class="pill o">来自试卷</span>':''}<span class="sp"></span><span class="sr">${[0,1,2].map(i=>`<i class="${i<w.streak?'f':''}"></i>`).join('')}</span><span class="sub" style="margin-left:6px">${dueTxt(w)}</span></div><div class="wst">${w.q.stem}</div><div class="sub">点开看答案和讲解 ▸</div></summary>
   <div class="ansline">正确答案：${ansHtml(w.q)}</div>${stepsHtml(w.q)}</details>`).join('');
  return `${topBar()}<div class="ptitle">📒 错题本</div>
