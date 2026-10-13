@@ -91,10 +91,14 @@ function studyEncourage(){ensureStudyDay();const todayMs=S.study.todayMs||0;cons
  if((S.study.totalMs||0)>0)return '🌱 每天一点点，根号会越来越乖的。';
  return '⏱️ 开始答题后会自动计时，首页能看到你的努力～';}
 function studyCardHtml(){ensureStudyDay();const tMs=S.study.todayMs||0,tot=S.study.totalMs||0;
+ const todays=(S.attempts||[]).filter(a=>a.date===today()&&!a.variant);
+ const n=todays.length,correct=todays.filter(a=>a.firstCorrect).length,hinted=todays.filter(a=>a.hintUsed).length;
+ const avg=n?Math.round(todays.reduce((sum,a)=>sum+(a.firstTimeMs||0),0)/n):0;
  return `<div class="card timecard" id="studyCard"><div class="row"><div style="font-size:34px">⏱️</div><div class="sp"><div style="font-size:18px;font-weight:900">学习时长</div><div class="sub">只在答题时计时 · 切到后台会暂停</div></div></div>
  <div class="row" style="margin-top:12px;gap:16px"><div class="sp center"><div class="tbig" id="homeTodayDur">${fmtDur(tMs)}</div><div class="tlab">今日学习</div></div>
  <div class="sp center"><div class="tbig">${fmtDur(tot)}</div><div class="tlab">累计学习</div></div></div>
  <div class="sub" style="margin-top:12px;font-weight:800">本周学习</div>${weekStudyBars()}
+ ${n?`<div class="pill" style="margin-top:10px">今日首答：${correct}/${n} 正确 · 提示 ${hinted} 题 · 平均每题 ${fmtDurCN(avg)}</div>`:''}
  <div class="encourage">${studyEncourage()}</div>
  ${(S.study.sessionsCount||0)?`<div class="sub" style="margin-top:8px">练习 ${S.study.sessionsCount} 次 · 最长一次 ${fmtDurCN(S.study.longestSessionMs||0)}</div>`:''}</div>`;}
 
