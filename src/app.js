@@ -194,7 +194,7 @@ function judge(ok){
  }
  if(!isRetry){
   it.firstTimeMs=elapsed;
-  it.attemptLog={date:today(),questionId:q.id,kp:q.kp,mode:sess.mode,variant:!!it.isVariant,firstCorrect:!!ok,hintUsed:!!it.hintUsed,firstTimeMs:elapsed};
+  it.attemptLog={date:today(),questionId:q.id,kp:q.kp,questionType:q.type,mode:sess.mode,variant:!!it.isVariant,firstCorrect:!!ok,hintUsed:!!it.hintUsed,firstTimeMs:elapsed};
   S.attempts.push(it.attemptLog);if(S.attempts.length>500)S.attempts.splice(0,S.attempts.length-500);
   save();
  }
@@ -217,7 +217,7 @@ function showSheet(ok,it){const q=it.q;const sh=document.getElementById('sheet')
  inn.scrollTop=0;sh.classList.add('show');}
 function hideSheet(){document.getElementById('sheet').classList.remove('show');}
 function retryOriginal(){if(!sess)return;const it=cur();it.retryStage=1;it.retryStartStudyMs=studyClock.sessionMs;hideSheet();sess.locked=false;sess.hint=false;sess.choice=-1;sess.fillVal='';render();window.scrollTo(0,0);}
-function nextQ(){if(!sess)return;hideSheet();const it=cur();if(it.retryStage===1&&it.res===1&&!it.variantAdded){it.variantAdded=true;const lv=it.q.kp;const gens=G[lv];if(gens&&gens.length){let q2=null;for(let n=0;n<12;n++){const candidate=pick(gens)();candidate.kp=lv;if(candidate.id!==it.q.id){q2=candidate;break;}}if(q2)sess.qs.splice(sess.i+1,0,{q:q2,isVariant:true});}}
+function nextQ(){if(!sess)return;hideSheet();const it=cur();if(shouldAddVariant(it,S.attempts)&&!it.variantAdded){it.variantAdded=true;const lv=it.q.kp;const gens=G[lv];if(gens&&gens.length){let q2=null;for(let n=0;n<12;n++){const candidate=pick(gens)();candidate.kp=lv;if(candidate.id!==it.q.id&&!sess.qs.some(x=>x.q.id===candidate.id)){q2=candidate;break;}}if(q2)sess.qs.splice(sess.i+1,0,{q:q2,isVariant:true});}}
  sess.i++;sess.locked=false;sess.hint=false;sess.choice=-1;if(sess.i>=sess.qs.length)finish();else{render();window.scrollTo(0,0);}}
 function useHint(){sess.hint=true;sess.usedHint=true;cur().hintUsed=true;render();}
 function quitQuiz(){modal(`<div class="center">${mascot('normal',70)}<h2>要先休息一下吗？</h2><p class="sub">已经答过的题会记录下来，但这一轮不算完成哦。</p></div>
