@@ -167,7 +167,7 @@ function judge(ok){
  const it=cur(),q=it.q;
  // A retry is another attempt at the same learning item, not a second new question.
  const isRetry=it.retryStage===1;
- sess.locked=true;sess.last=ok;it.res=ok?1:0;
+ sess.locked=true;sess.last=ok;it.res=ok?1:0;if(!isRetry)it.firstRes=ok?1:0;
  if(!isRetry){
   S.tot.ans++;
   const k=S.kp[q.kp]||(S.kp[q.kp]=[]);k.push(ok?1:0);if(k.length>10)k.shift();
@@ -208,7 +208,7 @@ function nextQ(){if(!sess)return;hideSheet();const it=cur();if(it.retryStage===1
 function useHint(){sess.hint=true;sess.usedHint=true;render();}
 function quitQuiz(){modal(`<div class="center">${mascot('normal',70)}<h2>要先休息一下吗？</h2><p class="sub">已经答过的题会记录下来，但这一轮不算完成哦。</p></div>
  <div class="stack"><button class="btn pur block" onclick="closeModal()">继续答题 💪</button><button class="btn ghost block" onclick="closeModal();hideSheet();stopStudyTimer();sess=null;go('home')">先休息一下</button></div>`);}
-function finish(){const s=sess;const tot=s.qs.length,c=s.correct;const r={mode:s.mode,lv:s.lv,c,tot,xp:s.xp,stars:0,pass:false};
+function finish(){const s=sess;const official=s.qs.filter(x=>!x.isVariant);const tot=official.length,c=official.filter(x=>x.firstRes===1).length;const r={mode:s.mode,lv:s.lv,c,tot,xp:s.xp,stars:0,pass:false};
  if(s.mode==='level'||s.mode==='boss'){const need=s.mode==='boss'?8:4;r.pass=c>=need;r.need=need;
   if(r.pass)r.stars=1+(c===tot?1:0)+(s.usedHint?0:1);
   if(s.mode==='level'){const L=S.levels[s.lv]||{stars:0,best:0,passed:false,plays:0};r.first=!L.passed&&r.pass;L.plays++;L.best=Math.max(L.best,c);
