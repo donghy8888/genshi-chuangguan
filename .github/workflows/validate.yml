@@ -13,6 +13,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Run scoring unit tests
+        run: node --test tests/session-scoring.test.js
       - name: Check JavaScript syntax
         run: |
           node --check src/questions.js
