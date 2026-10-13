@@ -23,7 +23,7 @@ jobs:
         run: sh -n src/build.sh
       - name: Build standalone site
         run: sh src/build.sh
-      - name: Verify committed site matches source build
+      - name: Verify committed site matches the current source build
         run: git diff --exit-code -- index.html
       - name: Check generated page JavaScript
         run: |
