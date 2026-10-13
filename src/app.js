@@ -194,7 +194,7 @@ function judge(ok){
  }
  if(!isRetry){
   it.firstTimeMs=elapsed;
-  it.attemptLog={date:today(),questionId:q.id,kp:q.kp,questionType:q.type,mode:sess.mode,variant:!!it.isVariant,firstCorrect:!!ok,hintUsed:!!it.hintUsed,firstTimeMs:elapsed};
+  const skill=classifyQuestion(q);it.skillId=skill.id;it.skillLabel=skill.label;it.attemptLog={date:today(),questionId:q.id,kp:q.kp,skillId:skill.id,skillLabel:skill.label,questionType:q.type,mode:sess.mode,variant:!!it.isVariant,firstCorrect:!!ok,hintUsed:!!it.hintUsed,firstTimeMs:elapsed,timestamp:Date.now()};
   S.attempts.push(it.attemptLog);if(S.attempts.length>500)S.attempts.splice(0,S.attempts.length-500);
   save();
  }
@@ -312,6 +312,10 @@ function vResult(){const r=lastRes;if(!r)return vHome();let head,body='';
 function dueTxt(w){const t=today();if(w.due<=t)return w.after>S.sessionNo?'下一轮练习复习':'今天可复习';if(w.due===addDays(t,1))return '明天复习';const p=w.due.split('-');return `${+p[1]}月${+p[2]}日复习`;}
 function vWrong(){const act=activeWrong(),due=dueWrong(),mas=S.wrong.filter(w=>w.mastered).length;
  const recommendation=recommendSkill(LV.map((_,i)=>S.kp[i+1]||[]));
+ const subskillRecommendation=recommendSubskill(S.attempts);
+ const subskillCard=subskillRecommendation
+  ? `<div class="card"><h2>🔎 具体技能诊断</h2><div style="font-weight:900;font-size:16px">${subskillRecommendation.label}</div><div class="sub" style="margin:7px 0;line-height:1.6">已有 ${subskillRecommendation.total} 次首答记录，正确率 ${subskillRecommendation.percent}%。建议先回到对应知识点练习，再用新题检查是否改善。</div><button class="btn sec block" onclick="startSession('level',${Number(subskillRecommendation.id.split('-')[0])})">练习对应知识点 →</button><div class="sub" style="margin-top:7px">这是根据题目文字的初步标签生成的建议；复杂题的精确步骤诊断仍需后续完善。</div></div>`
+  : `<div class="card"><h2>🔎 具体技能诊断</h2><div class="sub" style="line-height:1.6">每个技能至少积累 3 次首答记录后，才会显示薄弱技能建议。目前还没有足够的同类题记录。</div></div>`;
  const recommendationCard= recommendation.level
   ? `<div class="card"><h2>🧭 下一步学什么？</h2><div style="font-weight:900;font-size:17px">${LV[recommendation.level-1].icon} ${LV[recommendation.level-1].name}</div><div class="sub" style="line-height:1.6;margin:7px 0">${recommendation.reason}。当前记录：${recommendation.count} 题，正确率 ${recommendation.percent}%。先把这一块练稳，再往后推进。</div><button class="btn pri block" onclick="startSession('level',${recommendation.level})">开始这组基础练习 →</button></div>`
   : `<div class="card"><h2>🧭 下一步学什么？</h2><div style="font-weight:900;font-size:17px">🎯 ${recommendation.reason}</div><div class="sub" style="margin-top:7px">可以挑战 Boss，或选一关做变式练习。</div><button class="btn pri block" onclick="startSession('boss')">挑战综合题 →</button></div>`;
@@ -324,6 +328,7 @@ function vWrong(){const act=activeWrong(),due=dueWrong(),mas=S.wrong.filter(w=>w
  <div class="card"><div style="font-size:18px;font-weight:900">待复习 ${act.length} 题 · 已掌握 ${mas} 题</div><div class="sub" style="line-height:1.6">错题会在下一轮练习、1 天后、3 天后再出现，连续答对 3 次 <span class="sr"><i class="f"></i><i class="f"></i><i class="f"></i></span> 就算掌握</div>
  <button class="btn ${due.length?'pri':'ghost'} block" id="reviewBtn" style="margin-top:12px" onclick="startSession('review')" ${due.length?'':'disabled'}>${due.length?`开始复习（${Math.min(due.length,10)} 题）🔁`:(act.length?'暂时没有到期的错题，晚点再来 ⏰':'错题本空空的，真棒 🎉')}</button></div>
  ${recommendationCard}
+ ${subskillCard}
  <div class="card"><h2>📊 掌握进度</h2><div class="sub" style="margin-bottom:4px">按每个知识点最近 10 次答题计算；推荐路径按前置知识顺序判断</div>${kps}</div>
  ${act.length?`<div class="card"><h2>📝 错题列表</h2>${items}</div>`:''}`;}
 function vBadge(){const L=lvInfo(S.xp);const acc=S.tot.ans?Math.round(S.tot.cor/S.tot.ans*100):0;const got=BADGES.filter(b=>S.badges[b.id]).length;
