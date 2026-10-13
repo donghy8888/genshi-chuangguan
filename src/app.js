@@ -210,7 +210,7 @@ function quitQuiz(){modal(`<div class="center">${mascot('normal',70)}<h2>要先�
  <div class="stack"><button class="btn pur block" onclick="closeModal()">继续答题 💪</button><button class="btn ghost block" onclick="closeModal();hideSheet();stopStudyTimer();sess=null;go('home')">先休息一下</button></div>`);}
 function finish(){const s=sess;const official=s.qs.filter(x=>!x.isVariant);const tot=official.length,c=official.filter(x=>x.firstRes===1).length;const r={mode:s.mode,lv:s.lv,c,tot,xp:s.xp,stars:0,pass:false};
  if(s.mode==='level'||s.mode==='boss'){const need=s.mode==='boss'?8:4;r.pass=c>=need;r.need=need;
-  if(r.pass)r.stars=1+(c===tot?1:0)+(s.usedHint?0:1);
+  if(r.pass)r.stars=2+(c===tot?1:0);
   if(s.mode==='level'){const L=S.levels[s.lv]||{stars:0,best:0,passed:false,plays:0};r.first=!L.passed&&r.pass;L.plays++;L.best=Math.max(L.best,c);
    if(r.pass){L.passed=true;L.stars=Math.max(L.stars,r.stars);}S.levels[s.lv]=L;}
   else{r.first=!S.boss.passed&&r.pass;S.boss.best=Math.max(S.boss.best||0,c);if(r.pass){S.boss.passed=true;S.boss.stars=Math.max(S.boss.stars||0,r.stars);}}
@@ -267,7 +267,7 @@ function openLevel(n){const isB=n===9;const unlocked=isB?allPassed():lvUnlocked(
  <div class="sub" style="margin-top:10px;line-height:1.7">${isB?'共 10 题，答对 8 题击败 Boss。':'共 5 题，答对 4 题过关。'}<br>⭐ 过关 · 全对 +1⭐ · 不用提示 +1⭐</div>
  <div class="stack"><button class="btn pri block" id="startBtn" onclick="startSession('${isB?'boss':'level'}',${n})">${isB?'挑战 Boss 👹':'开始闯关 ⚔️'}</button><button class="btn ghost block" onclick="closeModal()">再看看</button></div>`);}
 function vQuiz(){const it=cur(),q=it.q;const info=LV[q.kp-1];
- const dots=sess.qs.map((x,j)=>`<span class="dot ${x.res===1?'g':x.res===0?'o':''} ${j===sess.i?'cur':''}"></span>`).join('');
+ const dots=sess.qs.map((x,j)=>{const res=x.firstRes!==undefined?x.firstRes:x.res;return `<span class="dot ${res===1?'g':res===0?'o':''} ${j===sess.i?'cur':''}" title="${x.isVariant?'变式练习':(res===1?'首次答对':res===0?'首次答错':'未作答')}"></span>`;}).join('');
  const title=sess.mode==='daily'?'🎯 每日打卡':sess.mode==='boss'?'👹 Boss 关':sess.mode==='review'?'🔁 错题复习':`第 ${sess.lv} 关`;
  let body;
  if(q.type==='mc'){body=`<div class="opts">${q.options.map((o,j)=>{const c=sess.locked?(j===q.answer?'right':(j===sess.choice?'wrongc':'dim')):'';
@@ -284,7 +284,7 @@ function vResult(){const r=lastRes;if(!r)return vHome();let head,body='';
  const xpL=`<div class="pill" style="font-size:16px">+${r.xp} XP</div>${r.studyMs?`<div class="pill g" style="font-size:16px">⏱️ 本局 ${fmtDur(r.studyMs)}</div>`:''}`;
  if(r.mode==='level'||r.mode==='boss'){
   if(r.pass){head=`${mascot('happy',90)}<h2 style="font-size:26px">${r.mode==='boss'?'Boss 被你打败啦！👑':'闯关成功！'}</h2><div class="bigstars">${stars3(r.stars)}</div>`;
-   body=`<div class="score">${r.c} / ${r.tot}</div>${xpL}${r.first&&r.mode==='level'&&r.lv<8?`<p><b>🔓 第 ${r.lv+1} 关已解锁！</b></p>`:''}${r.first&&r.mode==='level'&&r.lv===8?'<p><b>🔓 Boss 关已解锁！</b></p>':''}${r.stars<3?`<p class="sub">${r.c<r.tot?'全部答对可以多拿一颗星':'不用提示也全对，就能拿 3 星'} ⭐</p>`:''}`;}
+   body=`<div class="score">${r.c} / ${r.tot}</div>${xpL}${r.first&&r.mode==='level'&&r.lv<8?`<p><b>🔓 第 ${r.lv+1} 关已解锁！</b></p>`:''}${r.first&&r.mode==='level'&&r.lv===8?'<p><b>🔓 Boss 关已解锁！</b></p>':''}${r.stars<3?`<p class="sub">把还不熟的题再练一练，就有机会拿到 3 星 ⭐</p>`:''}`;}
   else{head=`${mascot('normal',90)}<h2 style="font-size:24px">就差一点点！</h2>`;body=`<div class="score">${r.c} / ${r.tot}</div><p>答对 ${r.need} 题就能过关。错的题已经放进错题本，看过讲解再来一次，一定行！💪</p>${xpL}`;}}
  else if(r.mode==='daily'){head=`${mascot('happy',90)}<h2 style="font-size:26px">${r.checkin?'今日打卡成功！':'加练完成！'}</h2><div style="font-size:50px">🔥 ${streak()}</div><div class="sub">连续打卡天数</div>`;
   body=`<div class="score" style="margin-top:8px">${r.c} / ${r.tot}</div>${xpL}${r.mastered?`<p>🎉 有 ${r.mastered} 道错题被你彻底掌握！</p>`:''}<p class="sub">明天再来，火苗会越来越旺哦～</p>`;}
