@@ -3,6 +3,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const officialQuizScore = require("../src/session-scoring.js");
 const shouldAddVariant = officialQuizScore.shouldAddVariant;
+const skillSnapshot = officialQuizScore.skillSnapshot;
 
 test("retry success does not overwrite a first-attempt mistake", () => {
   const qs = [{ firstRes: 0, res: 1 }, { firstRes: 1, res: 1 }];
@@ -52,4 +53,14 @@ test("slow success is compared with the learner's own median for the same skill 
 test("variants and incorrect first attempts do not trigger variant chains", () => {
   assert.equal(shouldAddVariant({ isVariant: true, firstRes: 1, hintUsed: true, q: { kp: 2, type: "mc" } }, []), false);
   assert.equal(shouldAddVariant({ firstRes: 0, hintUsed: false, q: { kp: 2, type: "mc" } }, []), false);
+});
+
+test("skill mastery percentage uses the actual number of attempts", () => {
+  assert.deepEqual(skillSnapshot([1]), { count: 1, percent: 100, status: "样本较少" });
+  assert.deepEqual(skillSnapshot([1, 0, 0]), { count: 3, percent: 33, status: "优先巩固" });
+  assert.deepEqual(skillSnapshot([1, 1, 0, 1]), { count: 4, percent: 75, status: "继续练习" });
+});
+
+test("unpracticed skills are not mistaken for zero-percent mastery", () => {
+  assert.deepEqual(skillSnapshot([]), { count: 0, percent: 0, status: "未练习" });
 });
