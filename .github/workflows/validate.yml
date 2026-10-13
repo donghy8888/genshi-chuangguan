@@ -42,6 +42,8 @@ jobs:
               raise SystemExit("Course progress or answer handling is missing")
           if "const remedialLessons" not in script or "function showRemedial(" not in script or "function checkRemedial(" not in script:
               raise SystemExit("Targeted remedial micro-practice is missing")
+          if "state.weaknesses" not in script or "id=\\"weaknessCard\\"" not in script:
+              raise SystemExit("Persistent weak-skill tracking and review recommendations are missing")
           if script.count("correct:") < 8:
               raise SystemExit("Expected a remedial micro-question for every unit")
           Path("/tmp/quadratic-course.js").write_text(script, encoding="utf-8")
