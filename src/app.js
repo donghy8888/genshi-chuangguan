@@ -163,18 +163,29 @@ function submitFill(){if(!sess||sess.locked)return;const el=document.getElementB
 function addWrong(q,meta){meta=meta||{};const t=today();const ex=S.wrong.find(w=>w.qid===q.id&&!w.mastered);
  if(ex){ex.streak=0;ex.due=t;ex.after=Math.min(ex.after||0,S.sessionNo);ex.miss=(ex.miss||1)+1;if(meta.fromSheet)ex.fromSheet=true;return;}
  S.wrong.push({id:'w'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),qid:q.id,q,kp:q.kp,streak:0,due:t,after:S.sessionNo,mastered:false,added:t,miss:1,fromSheet:!!meta.fromSheet});}
-function judge(ok){const it=cur(),q=it.q;sess.locked=true;sess.last=ok;it.res=ok?1:0;S.tot.ans++;
- const k=S.kp[q.kp]||(S.kp[q.kp]=[]);k.push(ok?1:0);if(k.length>10)k.shift();
- let gain=2;
- if(ok){S.tot.cor++;sess.correct++;sess.combo++;S.maxCombo=Math.max(S.maxCombo,sess.combo);gain=10+Math.min(sess.combo-1,5)*2;}
- else sess.combo=0;
- sess.xp+=gain;addXP(gain);
- if(it.sr){const w=S.wrong.find(x=>x.id===it.sr);if(w){if(ok){w.streak++;if(w.streak>=3){w.mastered=true;w.mdate=today();it.mastered=true;}else{w.due=addDays(today(),w.streak===1?1:3);w.after=0;}}
-   else{w.streak=0;w.due=today();w.after=S.sessionNo+1;w.miss=(w.miss||1)+1;}}}
- else if(!ok)addWrong(q);
- save();checkBadges();render();
- if(ok){confetti(sess.combo>=3?55:32);floatTxt(`+${gain} XP`);beep('ok');}else{document.querySelectorAll('.cf').forEach(c=>c.remove());beep('no');}
- showSheet(ok,it);}
+function judge(ok){
+ const it=cur(),q=it.q;
+ // A retry is another attempt at the same learning item, not a second new question.
+ const isRetry=it.retryStage===1;
+ sess.locked=true;sess.last=ok;it.res=ok?1:0;
+ if(!isRetry){
+  S.tot.ans++;
+  const k=S.kp[q.kp]||(S.kp[q.kp]=[]);k.push(ok?1:0);if(k.length>10)k.shift();
+  let gain=2;
+  if(ok){S.tot.cor++;sess.correct++;sess.combo++;S.maxCombo=Math.max(S.maxCombo,sess.combo);gain=10+Math.min(sess.combo-1,5)*2;}
+  else sess.combo=0;
+  sess.xp+=gain;addXP(gain);
+  if(it.sr){const w=S.wrong.find(x=>x.id===it.sr);if(w){if(ok){w.streak++;if(w.streak>=3){w.mastered=true;w.mdate=today();it.mastered=true;}else{w.due=addDays(today(),w.streak===1?1:3);w.after=0;}}
+    else{w.streak=0;w.due=today();w.after=S.sessionNo+1;w.miss=(w.miss||1)+1;}}}
+  else if(!ok)addWrong(q);
+  save();checkBadges();render();
+  if(ok){confetti(sess.combo>=3?55:32);floatTxt(`+${gain} XP`);beep('ok');}else{document.querySelectorAll('.cf').forEach(c=>c.remove());beep('no');}
+ }else{
+  // Retry feedback does not double-count stats, XP, combo, or wrong-book entries.
+  if(ok){beep('ok');}else{beep('no');}
+ }
+ showSheet(ok,it);
+}
 const PRAISE=['太棒了！','完全正确！','你真厉害！','漂亮！','稳稳的！','聪明！','就是这样！'];
 const COMFORT=['差一点点，没关系！','错了也是在进步哦～','别担心，我们一起看看！','这题有个小陷阱～'];
 function ansHtml(q){return q.type==='mc'?q.options[q.answer]:String(q.answer);}
