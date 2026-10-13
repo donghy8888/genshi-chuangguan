@@ -13,7 +13,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      # Skill tagging and subskill diagnostics are covered by the same scoring test suite.
+      # Skill tags, mistake-book labels, and subskill diagnostics share the scoring test suite.
       - name: Run scoring unit tests
         run: node --test tests/session-scoring.test.js
       - name: Check JavaScript syntax
