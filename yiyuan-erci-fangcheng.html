@@ -64,6 +64,16 @@ const units=[
 {q:"解应用题得到 x=−4 或 x=6，而 x 表示一段长度，应选？",o:["−4","6","两个都选","都不选"],a:1,e:"长度不能是负数，所以舍去 −4，保留 6。"},
 {q:"一个数的平方比这个数的 5 倍少 6，设这个数为 x，方程是？",o:["x²=5x−6","x²=5x+6","5x²=x−6","x²−5x−6=0"],a:0,e:"“平方比 5 倍少 6”表示 x²=5x−6；移项后是 x²−5x+6=0。"}]}
 ];
+const remedialLessons = [
+{title:"辨认一元二次方程",tip:"只有一个未知数，最高次数为 2，且 x² 项系数不能为 0。",question:"哪个是一元二次方程？",options:["x²+2x=0","x³+x=0","x+y=2"],correct:0,explain:"只有一个未知数 x，最高次数为 2。"},
+{title:"平方根要考虑正负",tip:"平方等于正数时，通常有正、负两个平方根。",question:"x²=36 的所有实数解是？",options:["x=6","x=−6","x=6 或 x=−6"],correct:2,explain:"6² 和 (−6)² 都等于 36。"},
+{title:"零乘积性质",tip:"乘积等于 0 时，至少一个因式等于 0。",question:"(x−5)(x+1)=0 的解是？",options:["x=5 或 x=−1","x=−5 或 x=1","x=4"],correct:0,explain:"分别令 x−5=0 和 x+1=0。"},
+{title:"配方时先除以 2 再平方",tip:"x²+bx 要补上 (b/2)²，才能成为完全平方。",question:"x²+4x+□=(x+2)²，方框里填？",options:["2","4","8"],correct:1,explain:"4 的一半是 2，2²=4。"},
+{title:"注意求根公式里的负号",tip:"先找 a、b、c；公式分子是 −b±√Δ，分母是 2a。",question:"x²−3x+2=0 中 b 是？",options:["3","−3","2"],correct:1,explain:"x 的系数是 −3，所以 b=−3。"},
+{title:"判别式判断实数根个数",tip:"Δ>0 两个不同实根；Δ=0 一个不同实根；Δ<0 没有实数根。",question:"若 Δ=0，有几个不同实数根？",options:["0 个","1 个","2 个"],correct:1,explain:"两个根重合，因此只有一个不同的实数根。"},
+{title:"观察结构选择解法",tip:"x²=k 可开平方；容易分解时优先因式分解；一般式也可用求根公式。",question:"x²−25=0 最直接的思路是？",options:["开平方或平方差分解","删掉常数项","无法求解"],correct:0,explain:"x²=25 可直接开平方，也可写成 (x−5)(x+5)=0。"},
+{title:"应用题先列关系",tip:"先定义未知数，再列数量关系；求根后检查是否符合实际。",question:"宽 x、长 x+3 的长方形面积为 28，方程是？",options:["x+(x+3)=28","x(x+3)=28","3x=28"],correct:1,explain:"面积等于长乘宽，所以 x(x+3)=28。"}
+];
 const KEY="genshi_quadratic_course_v1";
 let state=loadState(),active=1,qi=0,score=0,answered=false,results=[];
 function loadState(){try{return JSON.parse(localStorage.getItem(KEY))||{passed:[],best:{},tries:{}}}catch(e){return {passed:[],best:{},tries:{}}}}
