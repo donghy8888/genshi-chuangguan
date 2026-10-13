@@ -14,7 +14,7 @@ jobs:
         with:
           node-version: 20
       # Skill tags, mistake-book labels, and subskill diagnostics share the scoring test suite.
-      - name: Run scoring unit tests
+      - name: Run scoring and skill-path unit tests
         run: node --test tests/session-scoring.test.js
       - name: Check JavaScript syntax
         run: |
