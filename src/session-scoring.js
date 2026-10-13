@@ -36,4 +36,11 @@ function shouldAddVariant(item, attempts) {
   const median = history.length % 2 ? history[mid] : (history[mid-1] + history[mid]) / 2;
   return median > 0 && item.firstTimeMs > median * 1.5;
 }
-if (typeof module !== "undefined" && module.exports) module.exports = Object.assign(officialQuizScore, { shouldAddVariant });
+function skillSnapshot(history) {
+  const values = Array.isArray(history) ? history.filter(v => v === 0 || v === 1) : [];
+  const count = values.length;
+  const percent = count ? Math.round(values.reduce((sum, value) => sum + value, 0) / count * 100) : 0;
+  const status = !count ? "未练习" : count < 3 ? "样本较少" : percent < 60 ? "优先巩固" : percent < 80 ? "继续练习" : "暂时掌握较好";
+  return { count, percent, status };
+}
+if (typeof module !== "undefined" && module.exports) module.exports = Object.assign(officialQuizScore, { shouldAddVariant, skillSnapshot });
