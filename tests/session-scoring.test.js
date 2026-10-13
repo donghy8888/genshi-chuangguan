@@ -5,6 +5,8 @@ const officialQuizScore = require("../src/session-scoring.js");
 const shouldAddVariant = officialQuizScore.shouldAddVariant;
 const skillSnapshot = officialQuizScore.skillSnapshot;
 const recommendSkill = officialQuizScore.recommendSkill;
+const classifyQuestion = officialQuizScore.classifyQuestion;
+const recommendSubskill = officialQuizScore.recommendSubskill;
 
 test("retry success does not overwrite a first-attempt mistake", () => {
   const qs = [{ firstRes: 0, res: 1 }, { firstRes: 1, res: 1 }];
@@ -89,4 +91,31 @@ test("diagnostic prioritizes a demonstrated weak skill after sample size is suff
 test("diagnostic recommends a mixed challenge when all skills are stable", () => {
   const histories = Array.from({ length: 8 }, () => [1, 1, 1, 1]);
   assert.equal(recommendSkill(histories).level, null);
+});
+
+test("question classifier assigns level-specific skill tags", () => {
+  assert.equal(classifyQuestion({ kp: 2, stem: "要使根式有意义", hint: "被开方数要 ≥ 0" }).id, "2-radicand");
+  assert.equal(classifyQuestion({ kp: 2, stem: "要使分式有意义", hint: "分母不能为 0" }).id, "2-denominator");
+  assert.equal(classifyQuestion({ kp: 7, stem: "计算根式加减" }).id, "7-add-subtract");
+});
+
+test("subskill diagnostic only recommends weaknesses with at least three attempts", () => {
+  const attempts = [
+    { skillId: "2-radicand", skillLabel: "被开方数非负条件", firstCorrect: false },
+    { skillId: "2-radicand", skillLabel: "被开方数非负条件", firstCorrect: false }
+  ];
+  assert.equal(recommendSubskill(attempts), null);
+  attempts.push({ skillId: "2-radicand", skillLabel: "被开方数非负条件", firstCorrect: true });
+  assert.equal(recommendSubskill(attempts).percent, 33);
+  assert.equal(recommendSubskill(attempts).label, "被开方数非负条件");
+});
+
+test("subskill diagnostic ignores supplemental variant attempts", () => {
+  const attempts = [
+    { skillId: "4-factor", firstCorrect: false },
+    { skillId: "4-factor", firstCorrect: false },
+    { skillId: "4-factor", firstCorrect: true },
+    { skillId: "4-factor", firstCorrect: true, variant: true }
+  ];
+  assert.equal(recommendSubskill(attempts).total, 3);
 });
