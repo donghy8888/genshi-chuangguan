@@ -64,3 +64,7 @@ test("skill mastery percentage uses the actual number of attempts", () => {
 test("unpracticed skills are not mistaken for zero-percent mastery", () => {
   assert.deepEqual(skillSnapshot([]), { count: 0, percent: 0, status: "未练习" });
 });
+
+test("skill diagnostics ignore malformed history entries", () => {
+  assert.deepEqual(skillSnapshot([1, 0, null, "1", 7]), { count: 2, percent: 50, status: "样本较少" });
+});
