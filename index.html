@@ -286,6 +286,42 @@ function recommendSkill(histories) {
   }
   return { level: null, reason: "目前各知识点表现稳定，可尝试综合挑战", count: 0, percent: 100, status: "继续挑战" };
 }
+const SKILL_LABELS = {
+  "1-square-root":"正数开平方", "1-decimal-fraction":"小数与分数开平方", "1-arithmetic-root":"算术平方根与平方",
+  "2-radicand":"被开方数非负条件", "2-denominator":"分母不为零", "2-combined":"多个条件同时满足",
+  "3-absolute-value":"平方根与绝对值", "3-sign":"根据正负号去绝对值", "3-expression":"含字母根式化简",
+  "4-factor":"提取平方因数", "4-fraction":"分数与小数根式化简", "4-rationalize":"分母有理化",
+  "5-simplest":"判断最简二次根式", "6-like-radicals":"识别同类二次根式",
+  "7-add-subtract":"合并同类二次根式", "8-multiply-divide":"根式乘除", "8-equation":"根式相关方程", "8-rationalize":"分母有理化"
+};
+function classifyQuestion(q) {
+  const level = Number(q && q.kp) || 0;
+  const source = [q && q.stem, q && q.hint, ...((q && q.steps) || [])].join(" ").replace(/<[^>]*>/g, " ");
+  let key = "";
+  if (level === 1) key = /算术平方根/.test(source) ? "arithmetic-root" : /小数|分数|\.\d/.test(source) ? "decimal-fraction" : "square-root";
+  else if (level === 2) key = /同时|两个根号|两个条件|分母|分式/.test(source) ? (/分母|分母不能为 0/.test(source) ? "denominator" : "combined") : "radicand";
+  else if (level === 3) key = /a³b|ab³|移进根号|含字母|化简/.test(source) ? "expression" : /正负|x &lt;|x &gt;|a &lt;|b &lt;/.test(source) ? "sign" : "absolute-value";
+  else if (level === 4) key = /分母|有理化/.test(source) ? "rationalize" : /小数|分数/.test(source) ? "fraction" : "factor";
+  else if (level === 5) key = "simplest";
+  else if (level === 6) key = "like-radicals";
+  else if (level === 7) key = "add-subtract";
+  else if (level === 8) key = /方程|解方程/.test(source) ? "equation" : /分母|有理化/.test(source) ? "rationalize" : "multiply-divide";
+  else return { id: "unknown", label: "待识别技能" };
+  const id = level + "-" + key;
+  return { id, label: SKILL_LABELS[id] || "基础技能" };
+}
+function recommendSubskill(attempts) {
+  const list = Array.isArray(attempts) ? attempts : [];
+  const groups = new Map();
+  for (const a of list) {
+    if (!a || !a.skillId || a.variant || a.firstCorrect === undefined) continue;
+    if (!groups.has(a.skillId)) groups.set(a.skillId, { id: a.skillId, label: a.skillLabel || SKILL_LABELS[a.skillId] || "基础技能", total: 0, correct: 0, latest: 0 });
+    const g = groups.get(a.skillId); g.total++; if (a.firstCorrect) g.correct++; g.latest = Math.max(g.latest, Number(a.timestamp) || 0);
+  }
+  const ranked = [...groups.values()].filter(g => g.total >= 3).map(g => ({ ...g, percent: Math.round(g.correct / g.total * 100) }))
+    .filter(g => g.percent < 70).sort((a,b) => a.percent-b.percent || b.total-a.total || b.latest-a.latest);
+  return ranked[0] || null;
+}
 function skillSnapshot(history) {
   const values = Array.isArray(history) ? history.filter(v => v === 0 || v === 1) : [];
   const count = values.length;
@@ -712,7 +748,7 @@ function judge(ok){
  }
  if(!isRetry){
   it.firstTimeMs=elapsed;
-  it.attemptLog={date:today(),questionId:q.id,kp:q.kp,questionType:q.type,mode:sess.mode,variant:!!it.isVariant,firstCorrect:!!ok,hintUsed:!!it.hintUsed,firstTimeMs:elapsed};
+  const skill=classifyQuestion(q);it.skillId=skill.id;it.skillLabel=skill.label;it.attemptLog={date:today(),questionId:q.id,kp:q.kp,skillId:skill.id,skillLabel:skill.label,questionType:q.type,mode:sess.mode,variant:!!it.isVariant,firstCorrect:!!ok,hintUsed:!!it.hintUsed,firstTimeMs:elapsed,timestamp:Date.now()};
   S.attempts.push(it.attemptLog);if(S.attempts.length>500)S.attempts.splice(0,S.attempts.length-500);
   save();
  }
@@ -830,6 +866,10 @@ function vResult(){const r=lastRes;if(!r)return vHome();let head,body='';
 function dueTxt(w){const t=today();if(w.due<=t)return w.after>S.sessionNo?'下一轮练习复习':'今天可复习';if(w.due===addDays(t,1))return '明天复习';const p=w.due.split('-');return `${+p[1]}月${+p[2]}日复习`;}
 function vWrong(){const act=activeWrong(),due=dueWrong(),mas=S.wrong.filter(w=>w.mastered).length;
  const recommendation=recommendSkill(LV.map((_,i)=>S.kp[i+1]||[]));
+ const subskillRecommendation=recommendSubskill(S.attempts);
+ const subskillCard=subskillRecommendation
+  ? `<div class="card"><h2>🔎 具体技能诊断</h2><div style="font-weight:900;font-size:16px">${subskillRecommendation.label}</div><div class="sub" style="margin:7px 0;line-height:1.6">已有 ${subskillRecommendation.total} 次首答记录，正确率 ${subskillRecommendation.percent}%。建议先回到对应知识点练习，再用新题检查是否改善。</div><button class="btn sec block" onclick="startSession('level',${Number(subskillRecommendation.id.split('-')[0])})">练习对应知识点 →</button><div class="sub" style="margin-top:7px">这是根据题目文字的初步标签生成的建议；复杂题的精确步骤诊断仍需后续完善。</div></div>`
+  : `<div class="card"><h2>🔎 具体技能诊断</h2><div class="sub" style="line-height:1.6">每个技能至少积累 3 次首答记录后，才会显示薄弱技能建议。目前还没有足够的同类题记录。</div></div>`;
  const recommendationCard= recommendation.level
   ? `<div class="card"><h2>🧭 下一步学什么？</h2><div style="font-weight:900;font-size:17px">${LV[recommendation.level-1].icon} ${LV[recommendation.level-1].name}</div><div class="sub" style="line-height:1.6;margin:7px 0">${recommendation.reason}。当前记录：${recommendation.count} 题，正确率 ${recommendation.percent}%。先把这一块练稳，再往后推进。</div><button class="btn pri block" onclick="startSession('level',${recommendation.level})">开始这组基础练习 →</button></div>`
   : `<div class="card"><h2>🧭 下一步学什么？</h2><div style="font-weight:900;font-size:17px">🎯 ${recommendation.reason}</div><div class="sub" style="margin-top:7px">可以挑战 Boss，或选一关做变式练习。</div><button class="btn pri block" onclick="startSession('boss')">挑战综合题 →</button></div>`;
@@ -842,6 +882,7 @@ function vWrong(){const act=activeWrong(),due=dueWrong(),mas=S.wrong.filter(w=>w
  <div class="card"><div style="font-size:18px;font-weight:900">待复习 ${act.length} 题 · 已掌握 ${mas} 题</div><div class="sub" style="line-height:1.6">错题会在下一轮练习、1 天后、3 天后再出现，连续答对 3 次 <span class="sr"><i class="f"></i><i class="f"></i><i class="f"></i></span> 就算掌握</div>
  <button class="btn ${due.length?'pri':'ghost'} block" id="reviewBtn" style="margin-top:12px" onclick="startSession('review')" ${due.length?'':'disabled'}>${due.length?`开始复习（${Math.min(due.length,10)} 题）🔁`:(act.length?'暂时没有到期的错题，晚点再来 ⏰':'错题本空空的，真棒 🎉')}</button></div>
  ${recommendationCard}
+ ${subskillCard}
  <div class="card"><h2>📊 掌握进度</h2><div class="sub" style="margin-bottom:4px">按每个知识点最近 10 次答题计算；推荐路径按前置知识顺序判断</div>${kps}</div>
  ${act.length?`<div class="card"><h2>📝 错题列表</h2>${items}</div>`:''}`;}
 function vBadge(){const L=lvInfo(S.xp);const acc=S.tot.ans?Math.round(S.tot.cor/S.tot.ans*100):0;const got=BADGES.filter(b=>S.badges[b.id]).length;
