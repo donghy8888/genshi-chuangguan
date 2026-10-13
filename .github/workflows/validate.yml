@@ -26,6 +26,24 @@ jobs:
         run: sh src/build.sh
       - name: Verify committed site matches the current source build
         run: git diff --exit-code -- index.html
+      - name: Check quadratic-equations course script
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path("yiyuan-erci-fangcheng.html").read_text(encoding="utf-8")
+          scripts = re.findall(r"<script>(.*?)</script>", html, flags=re.S | re.I)
+          if len(scripts) != 1:
+              raise SystemExit(f"Expected one course script, found {len(scripts)}")
+          script = scripts[0]
+          if script.count("id:") < 8 or script.count("qs:[") != 8:
+              raise SystemExit("Expected eight units with question sets")
+          if "localStorage" not in script or "function answer(" not in script:
+              raise SystemExit("Course progress or answer handling is missing")
+          Path("/tmp/quadratic-course.js").write_text(script, encoding="utf-8")
+          print("Found eight learning units and extracted the course script")
+          PY
+          node --check /tmp/quadratic-course.js
       - name: Check generated page JavaScript
         run: |
           python3 - <<'PY'
