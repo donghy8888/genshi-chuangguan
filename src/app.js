@@ -142,7 +142,7 @@ function genLevel(lv,n){const used=new Set();const order=shuffle(G[lv].map((_,i)
 function genBoss(){const used=new Set();const out=[];for(let lv=1;lv<=8;lv++)out.push({q:genFrom(lv,used)});out.push({q:genFrom(rnd(4,8),used)});out.push({q:genFrom(rnd(4,8),used)});return out;}
 
 /* ================= 会话 ================= */
-let sess=null,lastRes=null,view='home',calOff=0,pendingSess=null,impUI={step:'list',topics:{},note:'',preview:null,thumb:null,viewId:null};
+let sess=null,lastRes=null,view=(window.location.hash==='#chapters'?'chapters':'home'),calOff=0,pendingSess=null,impUI={step:'list',topics:{},note:'',preview:null,thumb:null,viewId:null};
 function startSession(mode,lv,opts){opts=opts||{};
  if(mode==='review'&&!dueWrong().length){toast('现在没有需要复习的题啦 🎉');return;}
  const needLesson=(mode==='level'||mode==='boss')&&!opts.skipLesson;
