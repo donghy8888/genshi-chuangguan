@@ -217,13 +217,14 @@ h2{margin:0 0 10px;font-size:20px}
 .weekbars .wb.td .wd{color:var(--pur)}
 .encourage{background:#e7f9ee;color:#15913f;border-radius:14px;padding:10px 12px;font-weight:800;font-size:15px;margin-top:10px;line-height:1.5}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.chapter-card{display:block;width:100%;text-align:left;border:2px solid rgba(124,92,255,.14);font:inherit;color:inherit;cursor:pointer}.chapter-card:focus-visible{outline:3px solid #ffbf2e;outline-offset:3px}.chapter-icon{width:58px;height:58px;display:flex;align-items:center;justify-content:center;background:#f0edff;border-radius:18px;font-size:30px}.chapter-card .sub{line-height:1.55}.chapter-card:hover{border-color:#a79aff}
 </style>
 </head>
 <body>
 <div id="app"></div>
 <nav id="nav"><div class="in">
  <button data-v="home" onclick="go('home')"><b>🏠</b>首页</button>
- <button data-v="map" onclick="go('map')"><b>🗺️</b>闯关地图</button>
+ <button data-v="chapters" onclick="go('chapters')"><b>📚</b>数学课程</button>
  <button data-v="wrong" onclick="go('wrong')"><b>📒</b>错题本</button>
  <button data-v="badge" onclick="go('badge')"><b>🏆</b>成就</button>
 </div></nav>

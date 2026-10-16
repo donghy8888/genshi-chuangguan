@@ -26,6 +26,20 @@ jobs:
         run: sh src/build.sh
       - name: Verify committed site matches the current source build
         run: git diff --exit-code -- index.html
+      - name: Verify unified chapter catalog
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          home = Path("index.html").read_text(encoding="utf-8")
+          course = Path("yiyuan-erci-fangcheng.html").read_text(encoding="utf-8")
+          required = ["function vChapters()", "const CHAPTERS=", "id:'radicals'", "id:'quadratic'", 'data-v="chapters"', "function openChapter("]
+          for token in required:
+              if token not in home:
+                  raise SystemExit("Chapter catalog missing: " + token)
+          if './index.html#chapters' not in course:
+              raise SystemExit("Quadratic course must return to shared chapter catalog")
+          print("Shared course catalog and return navigation verified")
+          PY
       - name: Check quadratic-equations course script
         run: |
           python3 - <<'PY'
