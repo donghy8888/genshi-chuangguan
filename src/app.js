@@ -237,7 +237,7 @@ function finish(){const s=sess;const score=officialQuizScore(s.qs);const tot=sco
 /* ================= 视图 ================= */
 function go(v){view=v;render();window.scrollTo(0,0);}
 function render(){const app=document.getElementById('app');if(view==='quiz'&&!sess)view='home';if(view==='lesson'&&!pendingSess&&!(sess&&sess.showLesson))view='home';
- const V={home:vHome,map:vMap,wrong:vWrong,badge:vBadge,quiz:vQuiz,result:vResult,import:vImport,lesson:vLesson}[view]||vHome;app.innerHTML=V();
+ const V={home:vHome,chapters:vChapters,map:vMap,wrong:vWrong,badge:vBadge,quiz:vQuiz,result:vResult,import:vImport,lesson:vLesson}[view]||vHome;app.innerHTML=V();
  const nav=document.getElementById('nav');const hideNav=view==='quiz'||view==='result'||view==='lesson';nav.style.display=hideNav?'none':'';app.classList.toggle('noNav',hideNav);
  nav.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===view||(view==='import'&&b.dataset.v==='home')));}
 function stars3(n){return [1,2,3].map(i=>`<span class="${i<=n?'':'star-off'}">⭐</span>`).join('');}
@@ -245,11 +245,20 @@ function topBar(){const L=lvInfo(S.xp);return `<div class="top"><div class="lvch
  <div class="fire" title="连续打卡天数">🔥 ${streak()}</div><button class="iconbtn" onclick="openSettings()" aria-label="设置">⚙️</button></div>`;}
 function greet(){const st=streak(),done=S.checkins.includes(today());if(done)return '今天已经打卡啦！你真棒～想多练一组也可以哦 ✨';
  if(st>0)return `已经连续 ${st} 天啦！今天也来点燃火苗吧 🔥`;if(S.tot.ans===0)return '嗨！我是小根～每天 5 道题，我们一起慢慢变强！';return '欢迎回来！今天只要 5 道题，5 分钟就能搞定～';}
+
+const CHAPTERS=[
+{id:'radicals',title:'二次根式',subtitle:'化简、运算与应用',icon:'🌱',units:8,kind:'internal'},
+{id:'quadratic',title:'一元二次方程',subtitle:'开平方、因式分解、配方与求根',icon:'🧩',units:8,kind:'external',url:'./yiyuan-erci-fangcheng.html',progressKey:'genshi_quadratic_course_v1'}
+];
+function chapterProgress(ch){if(ch.id==='radicals')return ALL8.filter(lvPassed).length;try{const s=JSON.parse(localStorage.getItem(ch.progressKey)||'{}');return Array.isArray(s.passed)?s.passed.length:0}catch(e){return 0}}
+function openChapter(id){const ch=CHAPTERS.find(x=>x.id===id);if(!ch)return;if(ch.kind==='internal')go('map');else window.location.href=ch.url}
+function vChapters(){return topBar()+'<div class="ptitle">📚 数学学习地图</div><div class="sub" style="color:white;margin:5px 4px 12px">选择章节，沿着知识路线一步步闯关</div>'+CHAPTERS.map(ch=>{const n=chapterProgress(ch),pct=Math.round(n/ch.units*100);return '<button class="card chapter-card" onclick="openChapter(\''+ch.id+'\')"><div class="row"><div class="chapter-icon">'+ch.icon+'</div><div class="sp"><b style="font-size:20px">'+ch.title+'</b><div class="sub">'+ch.subtitle+'</div></div><b>›</b></div><div class="row" style="margin-top:13px"><span class="sub">已掌握 '+n+'/'+ch.units+' 关</span><span class="sp"></span><b>'+pct+'%</b></div><div class="prog" style="margin-top:8px"><i style="width:'+pct+'%"></i></div></button>'}).join('')+'<div class="card"><b>🌟 未来更多章节</b><p class="sub">以后增加新章节，只需注册章节资料与学习模块，即可在这里统一展示。</p></div>'}
+
 function vHome(){const done=S.checkins.includes(today());const due=dueWrong().length;const cl=curLevel();const nrev=Math.min(due,3);const np=ALL8.filter(lvPassed).length;
  return `${topBar()}<div class="hero">${mascot('happy',78)}<div class="bub">${greet()}</div></div>
  ${studyCardHtml()}
- <a class="card" href="./yiyuan-erci-fangcheng.html" style="display:block;color:inherit;text-decoration:none;border:2px solid #d9d1ff;background:linear-gradient(135deg,#fff,#f5f1ff)"><div class="row"><div style="font-size:40px">🧩</div><div class="sp"><div class="big" style="font-size:20px;font-weight:900">一元二次方程 · 新章节</div><div class="sub">从认识标准形式到解方程，8 个小关卡，循序渐进练习</div></div><div style="font-size:22px">›</div></div></a>
- <div class="card daily"><div class="row"><div class="sp"><div class="sub">每日打卡</div><div class="big">${done?'今日任务已完成 ✅':'今日任务：5 道题'}</div></div><div style="font-size:42px">${done?'🏅':'🎯'}</div></div>
+ <div class="card"><b style="font-size:19px">📚 我的数学课程</b><p class="sub">二次根式、一元二次方程和未来的新章节都在同一个入口。</p><button class="btn pur block" onclick="go('chapters')">进入数学学习地图 →</button></div>
+  <div class="card daily"><div class="row"><div class="sp"><div class="sub">每日打卡</div><div class="big">${done?'今日任务已完成 ✅':'今日任务：5 道题'}</div></div><div style="font-size:42px">${done?'🏅':'🎯'}</div></div>
  <div style="margin:8px 0 12px">${nrev?`<span class="pill o">🔁 复习错题 ${nrev} 题</span>`:''}<span class="pill">✨ 新题 ${5-nrev} 题</span><span class="pill g">⏱️ 约 5 分钟</span></div>
  <button class="btn ${done?'pur':'pri'} block" id="dailyBtn" onclick="startSession('daily')">${done?'再练一组 💪':'开始今日挑战 🚀'}</button></div>
  <div class="card"><div class="row"><div class="sp"><div class="sub">闯关进度</div><div style="font-size:18px;font-weight:900">${cl?`第 ${cl} 关 · ${LV[cl-1].name}`:(S.boss.passed?'全部通关！Boss 已击败 👑':'Boss 关已解锁！👹')}</div></div>
