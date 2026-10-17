@@ -438,7 +438,7 @@ const QUADRATIC_TOPICS=['认识一元二次方程','直接开平方法','因式�
 function selectedQuadratic(){return QUADRATIC_TOPICS.map((_,i)=>i+1).filter(n=>impUI.quadraticTopics&&impUI.quadraticTopics[n]);}
 function toggleQuadraticTopic(n){impUI.quadraticTopics=impUI.quadraticTopics||{};impUI.quadraticTopics[n]=!impUI.quadraticTopics[n];render();}
 function worksheetTopicLabels(sh){const radical=(sh.topics||[]).filter(n=>Number.isInteger(n)&&n>=1&&n<=LV.length).map(n=>'🌱 '+LV[n-1].short);const quadratic=(sh.quadraticTopics||[]).filter(n=>Number.isInteger(n)&&n>=1&&n<=QUADRATIC_TOPICS.length).map(n=>'🧩 '+QUADRATIC_TOPICS[n-1]);return [...radical,...quadratic];}
-function vImpScan(){return `${topBar()}<div class="card scan">${mascot('think',90)}<div class="eye">👀</div><h2>小根正在看你的试卷…</h2><div class="sub">请手动选择对应章节知识点</div><div class="bar"><i></i></div>
+function vImpScan(){return `${topBar()}<div class="card scan">${mascot('think',90)}<div class="eye">👀</div><h2>正在准备试卷关联…</h2><div class="sub">请手动选择对应章节知识点</div><div class="bar"><i></i></div>
  ${impUI.preview?`<img class="prevw" style="margin-top:16px;max-height:160px" src="${impUI.preview}" alt="预览">`:''}</div>`;}
 function vImpResult(){const topics=ALL8.map(n=>{const on=!!impUI.topics[n];return `<button type="button" class="tgl ${on?'on':''}" onclick="toggleTopic(${n})"><span class="ck">${on?'✓':''}</span><span>${LV[n-1].icon} ${LV[n-1].name}</span></button>`;}).join('');const quadraticTopics=QUADRATIC_TOPICS.map((name,i)=>{const n=i+1,on=!!(impUI.quadraticTopics||{})[n];return '<button type="button" class="tgl '+(on?'on':'')+'" onclick="toggleQuadraticTopic('+n+')"><span class="ck">'+(on?'✓':'')+'</span><span>🧩 第 '+n+' 关 · '+name+'</span></button>'}).join('');
  return `${topBar()}<div class="ptitle">📄 关联试卷到关卡</div>
@@ -482,7 +482,7 @@ function vImpDetail(){const sh=(S.sheets||[]).find(x=>x.id===impUI.viewId);if(!s
   <button class="btn ghost block danger" onclick="deleteSheet('${sh.id}')">删除这份试卷</button>
  </div></div>`;}
 function practiceSheetTopics(id){const sh=(S.sheets||[]).find(x=>x.id===id);if(!sh||!(sh.topics||[]).length&&!(sh.quadraticTopics||[]).length)return;
- const lv=(sh.topics||[]).find(n=>lvUnlocked(n))||(sh.topics||[])[0];if(lv){go('map');openLevel(lv);}else if((sh.quadraticTopics||[]).length){window.location.href='./yiyuan-erci-fangcheng.html';}}
+ const lv=(sh.topics||[]).find(n=>lvUnlocked(n))||(sh.topics||[])[0];if(lv){go('map');openLevel(lv);}else if((sh.quadraticTopics||[]).length){window.location.href='./yiyuan-erci-fangcheng.html?worksheet='+encodeURIComponent((sh.quadraticTopics||[]).join(','));}}
 function deleteSheet(id){S.sheets=(S.sheets||[]).filter(x=>x.id!==id);save();impUI.step='list';render();toast('已删除');}
 
 
