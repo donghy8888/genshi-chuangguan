@@ -142,7 +142,7 @@ function genLevel(lv,n){const used=new Set();const order=shuffle(G[lv].map((_,i)
 function genBoss(){const used=new Set();const out=[];for(let lv=1;lv<=8;lv++)out.push({q:genFrom(lv,used)});out.push({q:genFrom(rnd(4,8),used)});out.push({q:genFrom(rnd(4,8),used)});return out;}
 
 /* ================= 会话 ================= */
-let sess=null,lastRes=null,view=(window.location.hash==='#chapters'?'chapters':'home'),calOff=0,pendingSess=null,impUI={step:'list',topics:{},note:'',preview:null,thumb:null,viewId:null};
+let sess=null,lastRes=null,view='chapters',calOff=0,pendingSess=null,impUI={step:'list',topics:{},note:'',preview:null,thumb:null,viewId:null};
 function startSession(mode,lv,opts){opts=opts||{};
  if(mode==='review'&&!dueWrong().length){toast('现在没有需要复习的题啦 🎉');return;}
  const needLesson=(mode==='level'||mode==='boss')&&!opts.skipLesson;
@@ -236,9 +236,9 @@ function finish(){const s=sess;const score=officialQuizScore(s.qs);const tot=sco
 
 /* ================= 视图 ================= */
 function go(v){view=v;render();window.scrollTo(0,0);}
-function render(){const app=document.getElementById('app');if(view==='quiz'&&!sess)view='home';if(view==='lesson'&&!pendingSess&&!(sess&&sess.showLesson))view='home';
- const V={home:vHome,chapters:vChapters,map:vMap,wrong:vWrong,badge:vBadge,quiz:vQuiz,result:vResult,import:vImport,lesson:vLesson}[view]||vHome;app.innerHTML=V();
- const nav=document.getElementById('nav');const hideNav=view==='quiz'||view==='result'||view==='lesson';nav.style.display=hideNav?'none':'';app.classList.toggle('noNav',hideNav);
+function render(){const app=document.getElementById('app');if(view==='quiz'&&!sess)view='chapters';if(view==='lesson'&&!pendingSess&&!(sess&&sess.showLesson))view='home';
+ const V={home:vChapters,chapters:vChapters,map:vMap,wrong:vWrong,badge:vBadge,quiz:vQuiz,result:vResult,import:vImport,lesson:vLesson}[view]||vHome;app.innerHTML=V();
+ const nav=document.getElementById('nav');const hideNav=view==='quiz'||view==='result'||view==='lesson'||view==='map'||view==='import';nav.style.display=hideNav?'none':'';app.classList.toggle('noNav',hideNav);
  nav.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===view||(view==='import'&&b.dataset.v==='home')));}
 function stars3(n){return [1,2,3].map(i=>`<span class="${i<=n?'':'star-off'}">⭐</span>`).join('');}
 function topBar(){const L=lvInfo(S.xp);return `<div class="top"><div class="lvchip"><span class="lvnum">Lv.${L.L}</span><div style="flex:1;min-width:0"><div class="lvt">${L.title} · ${L.cur}/${L.need} XP</div><div class="xpbar"><i style="width:${Math.round(L.cur/L.need*100)}%"></i></div></div></div>
@@ -252,22 +252,9 @@ const CHAPTERS=[
 ];
 function chapterProgress(ch){if(ch.id==='radicals')return ALL8.filter(lvPassed).length;try{const s=JSON.parse(localStorage.getItem(ch.progressKey)||'{}');return Array.isArray(s.passed)?s.passed.length:0}catch(e){return 0}}
 function openChapter(id){const ch=CHAPTERS.find(x=>x.id===id);if(!ch)return;if(ch.kind==='internal')go('map');else window.location.href=ch.url}
-function vChapters(){return topBar()+'<div class="ptitle">📚 数学学习地图</div><div class="sub" style="color:white;margin:5px 4px 12px">选择章节，沿着知识路线一步步闯关</div>'+CHAPTERS.map(ch=>{const n=chapterProgress(ch),pct=Math.round(n/ch.units*100);return '<button class="card chapter-card" onclick="openChapter(\''+ch.id+'\')"><div class="row"><div class="chapter-icon">'+ch.icon+'</div><div class="sp"><b style="font-size:20px">'+ch.title+'</b><div class="sub">'+ch.subtitle+'</div></div><b>›</b></div><div class="row" style="margin-top:13px"><span class="sub">已掌握 '+n+'/'+ch.units+' 关</span><span class="sp"></span><b>'+pct+'%</b></div><div class="prog" style="margin-top:8px"><i style="width:'+pct+'%"></i></div></button>'}).join('')+'<div class="card"><b>🌟 未来更多章节</b><p class="sub">以后增加新章节，只需注册章节资料与学习模块，即可在这里统一展示。</p></div>'}
+function vChapters(){return topBar()+'<div class="ptitle">🗺️ 数学闯关</div><div class="sub" style="color:white;margin:5px 4px 12px">选择章节，沿着知识路线一步步闯关</div>'+CHAPTERS.map(ch=>{const n=chapterProgress(ch),pct=Math.round(n/ch.units*100);return '<button class="card chapter-card" onclick="openChapter(\''+ch.id+'\')"><div class="row"><div class="chapter-icon">'+ch.icon+'</div><div class="sp"><b style="font-size:20px">'+ch.title+'</b><div class="sub">'+ch.subtitle+'</div></div><b>›</b></div><div class="row" style="margin-top:13px"><span class="sub">已掌握 '+n+'/'+ch.units+' 关</span><span class="sp"></span><b>'+pct+'%</b></div><div class="prog" style="margin-top:8px"><i style="width:'+pct+'%"></i></div></button>'}).join('')+'<div class="card"><b>🌟 未来更多章节</b><p class="sub">以后增加新章节，只需注册章节资料与学习模块，即可在这里统一展示。</p></div>'}
 
-function vHome(){const done=S.checkins.includes(today());const due=dueWrong().length;const cl=curLevel();const nrev=Math.min(due,3);const np=ALL8.filter(lvPassed).length;
- return `${topBar()}<div class="hero">${mascot('happy',78)}<div class="bub">${greet()}</div></div>
- ${studyCardHtml()}
- <div class="card"><b style="font-size:19px">📚 我的数学课程</b><p class="sub">二次根式、一元二次方程和未来的新章节都在同一个入口。</p><button class="btn pur block" onclick="go('chapters')">进入数学学习地图 →</button></div>
-  <div class="card daily"><div class="row"><div class="sp"><div class="sub">每日打卡</div><div class="big">${done?'今日任务已完成 ✅':'今日任务：5 道题'}</div></div><div style="font-size:42px">${done?'🏅':'🎯'}</div></div>
- <div style="margin:8px 0 12px">${nrev?`<span class="pill o">🔁 复习错题 ${nrev} 题</span>`:''}<span class="pill">✨ 新题 ${5-nrev} 题</span><span class="pill g">⏱️ 约 5 分钟</span></div>
- <button class="btn ${done?'pur':'pri'} block" id="dailyBtn" onclick="startSession('daily')">${done?'再练一组 💪':'开始今日挑战 🚀'}</button></div>
- <div class="card"><div class="row"><div class="sp"><div class="sub">闯关进度</div><div style="font-size:18px;font-weight:900">${cl?`第 ${cl} 关 · ${LV[cl-1].name}`:(S.boss.passed?'全部通关！Boss 已击败 👑':'Boss 关已解锁！👹')}</div></div>
- <div style="font-size:15px;font-weight:800;color:var(--pur)">${np}/8</div></div>
- <div class="prog" style="margin:10px 0 12px"><i style="width:${np/8*100}%"></i></div>
- <button class="btn gold block" onclick="openLevel(${cl||9})">${cl?'继续闯关 ⚔️':'挑战 Boss 👹'}</button></div>
- <div class="card impcard" id="importCard" onclick="openImport()" style="cursor:pointer"><div class="row"><div style="font-size:40px">📷</div><div class="sp"><div class="big" style="font-size:20px;font-weight:900">导入试卷</div><div class="sub">拍一张作业 / 从相册选图，小根帮你对照知识点练</div></div><div style="font-size:22px">›</div></div>${(S.sheets&&S.sheets.length)?`<div class="sub" style="margin-top:8px">已保存 ${S.sheets.length} 份试卷</div>`:''}</div>
- ${due?`<div class="card row" onclick="go('wrong')" style="cursor:pointer"><div style="font-size:34px">📒</div><div class="sp"><b>有 ${due} 道错题等你复习</b><div class="sub">复习对 3 次就算掌握啦</div></div><div style="font-size:22px">›</div></div>`:''}
- <div class="card">${calHtml()}</div>`;}
+function vHome(){return vChapters();}
 function calHtml(){const now=new Date();const first=new Date(now.getFullYear(),now.getMonth()+calOff,1);const y=first.getFullYear(),m=first.getMonth();
  const days=new Date(y,m+1,0).getDate(),w0=first.getDay();const set=new Set(S.checkins),t=today();let cells='日一二三四五六'.split('').map(x=>`<div class="cw">${x}</div>`).join('');let cnt=0;
  for(let i=0;i<w0;i++)cells+='<div class="cd e"></div>';
@@ -281,8 +268,8 @@ function vMap(){const xs=[50,74,76,56,30,22,36,62,50];const gap=150,top0=70;let 
   ${isCur?'<div class="cur-flag">⬇️</div>':''}<div class="c">${unlocked?(isB?'👹':n):'🔒'}</div><div class="lb">${isB?'Boss 关':n+'. '+info.short}</div>
   <div class="st">${unlocked?stars3(st):''}</div></button>`;}
  const H=top0+8*gap+110;
- return `${topBar()}<div class="ptitle">🗺️ 二次根式大冒险</div><div class="sub" style="color:#fff;margin:2px 4px 0">每关 5 题，答对 4 题就过关！全部通关解锁 Boss</div>
- <div class="map" style="height:${H}px"><svg class="path" viewBox="0 0 100 ${H}" preserveAspectRatio="none"><polyline points="${pts.join(' ')}" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="7" stroke-dasharray="2 14" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>${nodes}</div>`;}
+ return `${topBar()}<button class="btn ghost" onclick="go('chapters')" style="margin-top:12px">← 返回数学闯关</button><div class="ptitle">🗺️ 二次根式大冒险</div><div class="sub" style="color:#fff;margin:2px 4px 0">每关 5 题，答对 4 题就过关！全部通关解锁 Boss</div>
+ <div class="card"><b>📄 学校试卷也在这里练</b><div class="sub">把试卷中的错题关联到对应关卡，再从关卡里复习</div><button class="level-sheet" onclick="openImport()">＋ 添加试卷错题到闯关</button></div><div class="map" style="height:${H}px"><svg class="path" viewBox="0 0 100 ${H}" preserveAspectRatio="none"><polyline points="${pts.join(' ')}" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="7" stroke-dasharray="2 14" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>${nodes}</div>`;}
 function openLevel(n){const isB=n===9;const unlocked=isB?allPassed():lvUnlocked(n);
  if(!unlocked){toast(isB?'通过全部 8 关就能挑战 Boss 哦 🔒':`先通过第 ${n-1} 关就能解锁啦 🔒`);return;}
  const info=isB?BOSS:LV[n-1];const L=isB?S.boss:S.levels[n];const st=L?(L.stars||0):0;
@@ -436,7 +423,7 @@ function vImpList(){const list=(S.sheets||[]).slice().reverse();
  <div class="card"><h2>📁 我的试卷 ${list.length?`(${list.length})`:''}</h2>
  ${list.length?list.map(sh=>`<button class="sheet-item" onclick="viewSheet('${sh.id}')"><img class="sheet-thumb" src="${sh.thumb||sh.data}" alt=""><div class="sp"><b>${sh.date}</b><div class="sub">${(sh.topics||[]).map(t=>LV[t-1]?LV[t-1].short:'').filter(Boolean).join(' · ')||'未标记知识点'}</div>${sh.note?`<div class="sub" style="margin-top:2px">📝 ${esc(sh.note).slice(0,40)}</div>`:''}</div></button>`).join(''):'<div class="sub">还没有导入过试卷，拍一张试试吧～</div>'}
  </div>
- <button class="btn ghost block" onclick="go('home')">← 返回首页</button>`;}
+ <button class="btn ghost block" onclick="go('map')">← 返回闯关地图</button>`;}
 function esc(t){return String(t||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function onSheetFile(ev){const f=ev.target.files&&ev.target.files[0];if(!f)return;if(!f.type.startsWith('image/')){toast('请选择图片哦');return;}
  const rd=new FileReader();rd.onload=()=>compressSheet(rd.result);rd.readAsDataURL(f);ev.target.value='';}
@@ -476,8 +463,8 @@ function confirmImport(){const picked=ALL8.filter(n=>impUI.topics[n]);if(!picked
  const used=new Set();let seeded=0;
  picked.forEach(lv=>{const n=1+(Math.random()<.5?1:0);for(let i=0;i<n;i++){const q=genFrom(lv,used);addWrong(q,{fromSheet:true});seeded++;}});
  save();checkBadges();
- toast(`已解锁 ${picked.length} 个知识点，错题本 +${seeded} 题 📒`,true);confetti(40);
- impUI={step:'list',topics:{},note:'',preview:null,thumb:null,viewId:null};go('import');}
+ toast(`已关联 ${picked.length} 个关卡，安排 ${seeded} 道针对性练习`,true);confetti(40);
+ impUI={step:'list',topics:{},note:'',preview:null,thumb:null,viewId:null};go('map');}
 function viewSheet(id){impUI.viewId=id;impUI.step='detail';render();}
 function vImpDetail(){const sh=(S.sheets||[]).find(x=>x.id===impUI.viewId);if(!sh){impUI.step='list';return vImpList();}
  return `${topBar()}<div class="ptitle">📄 试卷详情</div>
