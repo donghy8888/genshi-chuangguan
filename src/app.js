@@ -265,7 +265,7 @@ function vMap(){const xs=[50,74,76,56,30,22,36,62,50];const gap=150,top0=70;let 
   const unlocked=isB?allPassed():lvUnlocked(n);const passed=isB?S.boss.passed:lvPassed(n);const st=isB?(S.boss.stars||0):(S.levels[n]?S.levels[n].stars:0);
   const info=isB?BOSS:LV[n-1];const isCur=isB?(unlocked&&!passed):n===cl;
   nodes+=`<button class="node ${isB?'boss':''} ${unlocked?(passed?'passed':''):'locked'} ${isCur?'cur':''}" style="left:${x}%;top:${y}px" onclick="openLevel(${n})" aria-label="${info.name}">
-  ${isCur?'<div class="cur-flag">⬇️</div>':''}<div class="c">${unlocked?(isB?'👹':n):'🔒'}</div><div class="lb">${isB?'Boss 关':n+'. '+info.short}</div>
+  ${isCur?'<div class="cur-flag">⬇️</div>':''}<div class="c">${unlocked?(isB?'👹':n):'🔒'}</div><div class="lb">${isB?'Boss 关':n+'. '+info.short}</div>${!isB&&(S.sheets||[]).some(sh=>(sh.topics||[]).includes(n))?'<div class="st">📄 试卷关联</div>':''}
   <div class="st">${unlocked?stars3(st):''}</div></button>`;}
  const H=top0+8*gap+110;
  return `${topBar()}<button class="btn ghost" onclick="go('chapters')" style="margin-top:12px">← 返回数学闯关</button><div class="ptitle">🗺️ 二次根式大冒险</div><div class="sub" style="color:#fff;margin:2px 4px 0">每关 5 题，答对 4 题就过关！全部通关解锁 Boss</div>
@@ -274,7 +274,7 @@ function openLevel(n){const isB=n===9;const unlocked=isB?allPassed():lvUnlocked(
  if(!unlocked){toast(isB?'通过全部 8 关就能挑战 Boss 哦 🔒':`先通过第 ${n-1} 关就能解锁啦 🔒`);return;}
  const info=isB?BOSS:LV[n-1];const L=isB?S.boss:S.levels[n];const st=L?(L.stars||0):0;
  modal(`<div class="center"><div style="font-size:52px">${info.icon}</div><h2>${isB?'':'第 '+n+' 关 · '}${info.name}</h2><div style="font-size:22px">${stars3(st)}</div></div>
- <div class="hintb"><b>📝 闯关小贴士</b><br>${info.tip}</div>
+ <div class="hintb"><b>📝 闯关小贴士</b><br>${info.tip}</div>${!isB?(S.sheets||[]).some(sh=>(sh.topics||[]).includes(n))?'<div class="sheet-prompt">📄 这关已关联学校试卷。请对照保存的原卷练习；当前自动练习题是同知识点题目，并非从照片中识别出的原题。</div>':'':''}
  <div class="sub" style="margin-top:10px;line-height:1.7">${isB?'共 10 题，答对 8 题击败 Boss。':'共 5 题，答对 4 题过关。'}<br>⭐ 过关 · 全对 +1⭐ · 不用提示 +1⭐</div>
  <div class="stack"><button class="btn pri block" id="startBtn" onclick="startSession('${isB?'boss':'level'}',${n})">${isB?'挑战 Boss 👹':'开始闯关 ⚔️'}</button><button class="btn ghost block" onclick="closeModal()">再看看</button></div>`);}
 function vQuiz(){const it=cur(),q=it.q;const info=LV[q.kp-1];
@@ -414,12 +414,12 @@ function openImport(){impUI={step:'list',topics:{},note:'',preview:null,thumb:nu
 function vImport(){if(impUI.step==='scan')return vImpScan();if(impUI.step==='result')return vImpResult();if(impUI.step==='detail')return vImpDetail();return vImpList();}
 function vImpList(){const list=(S.sheets||[]).slice().reverse();
  return `${topBar()}<div class="ptitle">📷 导入试卷</div>
- <div class="card"><div class="row">${mascot('happy',60)}<div class="sp"><b>把作业拍给我看看～</b><div class="sub">小根会对照二次根式知识点，帮你挑出要练的关卡</div></div></div>
+ <div class="card"><div class="row">${mascot('happy',60)}<div class="sp"><b>把作业拍给我看看～</b><div class="sub">选择试卷对应的知识点，把练习安排进闯关地图</div></div></div>
  <div class="stack" style="margin-top:14px">
   <label class="btn pri block filebtn" id="pickCam">📸 拍照<input type="file" accept="image/*" capture="environment" onchange="onSheetFile(event)"></label>
   <label class="btn pur block filebtn" id="pickLib">🖼️ 从相册选择<input type="file" accept="image/*" onchange="onSheetFile(event)"></label>
  </div>
- <p class="sub" style="margin-top:10px;line-height:1.5">提示：本机不会真正 OCR，小根会按「二次根式」作业帮你勾好常见知识点，你再确认哪些不会 / 做错啦。</p></div>
+ <p class="sub" style="margin-top:10px;line-height:1.5">提示：目前不会识别照片里的具体题目。请手动勾选相关知识点，系统会将同知识点练习关联到闯关地图；原卷照片仍会保存。</p></div>
  <div class="card"><h2>📁 我的试卷 ${list.length?`(${list.length})`:''}</h2>
  ${list.length?list.map(sh=>`<button class="sheet-item" onclick="viewSheet('${sh.id}')"><img class="sheet-thumb" src="${sh.thumb||sh.data}" alt=""><div class="sp"><b>${sh.date}</b><div class="sub">${(sh.topics||[]).map(t=>LV[t-1]?LV[t-1].short:'').filter(Boolean).join(' · ')||'未标记知识点'}</div>${sh.note?`<div class="sub" style="margin-top:2px">📝 ${esc(sh.note).slice(0,40)}</div>`:''}</div></button>`).join(''):'<div class="sub">还没有导入过试卷，拍一张试试吧～</div>'}
  </div>
@@ -436,8 +436,8 @@ function compressSheet(dataUrl){const img=new Image();img.onload=()=>{const max=
 function vImpScan(){return `${topBar()}<div class="card scan">${mascot('think',90)}<div class="eye">👀</div><h2>小根正在看你的试卷…</h2><div class="sub">对照二次根式知识点中</div><div class="bar"><i></i></div>
  ${impUI.preview?`<img class="prevw" style="margin-top:16px;max-height:160px" src="${impUI.preview}" alt="预览">`:''}</div>`;}
 function vImpResult(){const topics=ALL8.map(n=>{const on=!!impUI.topics[n];return `<button type="button" class="tgl ${on?'on':''}" onclick="toggleTopic(${n})"><span class="ck">${on?'✓':''}</span><span>${LV[n-1].icon} ${LV[n-1].name}</span></button>`;}).join('');
- return `${topBar()}<div class="ptitle">✨ 识别结果</div>
- <div class="card"><div class="row">${mascot('happy',58)}<div class="sp"><b>小根对照了你的试卷，建议从这些知识点开始练～</b><div class="sub">勾选「我不会 / 做错了」的知识点</div></div></div>
+ return `${topBar()}<div class="ptitle">📄 关联试卷到关卡</div>
+ <div class="card"><div class="row">${mascot('happy',58)}<div class="sp"><b>请确认这份试卷涉及哪些知识点</b><div class="sub">勾选「我不会 / 做错了」的知识点</div></div></div>
  ${impUI.preview?`<img class="prevw" style="margin:12px 0" src="${impUI.preview}" alt="试卷预览">`:''}
  <div style="margin-top:8px">${topics}</div>
  <div style="margin-top:14px"><b>📝 备注（可选）</b><div class="sub">比如：第 3 题不会、第 5 题做错了</div>
@@ -459,11 +459,9 @@ function confirmImport(){const picked=ALL8.filter(n=>impUI.topics[n]);if(!picked
   sheet.data=sheet.thumb;try{S.sheets.push(sheet);save();}catch(e2){toast('存储空间不够，试试清掉旧试卷～');return;}}
  // unlock
  const set=new Set(S.sheetUnlock||[]);picked.forEach(n=>set.add(n));S.sheetUnlock=[...set];
- // seed wrong book 1-2 per topic
- const used=new Set();let seeded=0;
- picked.forEach(lv=>{const n=1+(Math.random()<.5?1:0);for(let i=0;i<n;i++){const q=genFrom(lv,used);addWrong(q,{fromSheet:true});seeded++;}});
+ // The original paper is an image; do not fabricate extracted questions or mark generated questions as original mistakes.
  save();checkBadges();
- toast(`已关联 ${picked.length} 个关卡，安排 ${seeded} 道针对性练习`,true);confetti(40);
+ toast(`已将试卷关联到 ${picked.length} 个关卡，请在地图中练习`,true);confetti(40);
  impUI={step:'list',topics:{},note:'',preview:null,thumb:null,viewId:null};go('map');}
 function viewSheet(id){impUI.viewId=id;impUI.step='detail';render();}
 function vImpDetail(){const sh=(S.sheets||[]).find(x=>x.id===impUI.viewId);if(!sh){impUI.step='list';return vImpList();}
