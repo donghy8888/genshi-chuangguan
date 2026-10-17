@@ -431,16 +431,20 @@ function onSheetFile(ev){const f=ev.target.files&&ev.target.files[0];if(!f)retur
 function compressSheet(dataUrl){const img=new Image();img.onload=()=>{const max=900;let w=img.width,h=img.height;if(w>max){h=Math.round(h*max/w);w=max;}
   const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
   const full=c.toDataURL('image/jpeg',0.72);const tw=180,th=Math.round(h*tw/w);const c2=document.createElement('canvas');c2.width=tw;c2.height=th;c2.getContext('2d').drawImage(img,0,0,tw,th);
-  impUI.preview=full;impUI.thumb=c2.toDataURL('image/jpeg',0.6);impUI.note='';impUI.topics={};SHEET_PRE.forEach(n=>impUI.topics[n]=true);impUI.step='scan';render();
+  impUI.preview=full;impUI.thumb=c2.toDataURL('image/jpeg',0.6);impUI.note='';impUI.topics={};impUI.quadraticTopics={};impUI.step='result';render();
   setTimeout(()=>{impUI.step='result';render();window.scrollTo(0,0);},1200+Math.random()*300);};
  img.onerror=()=>toast('图片打不开，换一张试试～');img.src=dataUrl;}
-function vImpScan(){return `${topBar()}<div class="card scan">${mascot('think',90)}<div class="eye">👀</div><h2>小根正在看你的试卷…</h2><div class="sub">对照二次根式知识点中</div><div class="bar"><i></i></div>
+const QUADRATIC_TOPICS=['认识一元二次方程','直接开平方法','因式分解法','配方法','求根公式','判别式','选择解法','应用题'];
+function selectedQuadratic(){return QUADRATIC_TOPICS.map((_,i)=>i+1).filter(n=>impUI.quadraticTopics&&impUI.quadraticTopics[n]);}
+function toggleQuadraticTopic(n){impUI.quadraticTopics=impUI.quadraticTopics||{};impUI.quadraticTopics[n]=!impUI.quadraticTopics[n];render();}
+function worksheetTopicLabels(sh){const radical=(sh.topics||[]).filter(n=>Number.isInteger(n)&&n>=1&&n<=LV.length).map(n=>'🌱 '+LV[n-1].short);const quadratic=(sh.quadraticTopics||[]).filter(n=>Number.isInteger(n)&&n>=1&&n<=QUADRATIC_TOPICS.length).map(n=>'🧩 '+QUADRATIC_TOPICS[n-1]);return [...radical,...quadratic];}
+function vImpScan(){return `${topBar()}<div class="card scan">${mascot('think',90)}<div class="eye">👀</div><h2>正在准备试卷关联…</h2><div class="sub">请手动选择对应章节知识点</div><div class="bar"><i></i></div>
  ${impUI.preview?`<img class="prevw" style="margin-top:16px;max-height:160px" src="${impUI.preview}" alt="预览">`:''}</div>`;}
-function vImpResult(){const topics=ALL8.map(n=>{const on=!!impUI.topics[n];return `<button type="button" class="tgl ${on?'on':''}" onclick="toggleTopic(${n})"><span class="ck">${on?'✓':''}</span><span>${LV[n-1].icon} ${LV[n-1].name}</span></button>`;}).join('');
+function vImpResult(){const topics=ALL8.map(n=>{const on=!!impUI.topics[n];return `<button type="button" class="tgl ${on?'on':''}" onclick="toggleTopic(${n})"><span class="ck">${on?'✓':''}</span><span>${LV[n-1].icon} ${LV[n-1].name}</span></button>`;}).join('');const quadraticTopics=QUADRATIC_TOPICS.map((name,i)=>{const n=i+1,on=!!(impUI.quadraticTopics||{})[n];return '<button type="button" class="tgl '+(on?'on':'')+'" onclick="toggleQuadraticTopic('+n+')"><span class="ck">'+(on?'✓':'')+'</span><span>🧩 第 '+n+' 关 · '+name+'</span></button>'}).join('');
  return `${topBar()}<div class="ptitle">📄 关联试卷到关卡</div>
  <div class="card"><div class="row">${mascot('happy',58)}<div class="sp"><b>请确认这份试卷涉及哪些知识点</b><div class="sub">勾选「我不会 / 做错了」的知识点</div></div></div>
  ${impUI.preview?`<img class="prevw" style="margin:12px 0" src="${impUI.preview}" alt="试卷预览">`:''}
- <div style="margin-top:8px">${topics}</div>
+ <div class="sheet-prompt">目前尚无照片自动识题能力，请根据试卷内容手动勾选对应章节。可以同时选择两个章节。</div><h3>🌱 二次根式</h3><div style="margin-top:8px">${topics}</div><h3>🧩 一元二次方程</h3><div style="margin-top:8px">${quadraticTopics}</div>
  <div style="margin-top:14px"><b>📝 备注（可选）</b><div class="sub">比如：第 3 题不会、第 5 题做错了</div>
  <textarea class="note" id="sheetNote" placeholder="这道题我不会 / 这道题做错了…" oninput="impUI.note=this.value">${esc(impUI.note)}</textarea></div>
  <div class="stack" style="margin-top:14px"><button class="btn pri block" id="confirmImport" onclick="confirmImport()">确认，开始练这些 ✓</button>
@@ -448,11 +452,11 @@ function vImpResult(){const topics=ALL8.map(n=>{const on=!!impUI.topics[n];retur
 function saveSheetOnly(){const note=(document.getElementById('sheetNote')||{}).value||impUI.note||'';
  const picked=ALL8.filter(n=>impUI.topics[n]);
  const id='sh'+Date.now().toString(36);
- const sheet={id,date:today(),data:impUI.preview,thumb:impUI.thumb||impUI.preview,topics:picked,note:note.trim(),added:Date.now()};
+ const sheet={id,date:today(),data:impUI.preview,thumb:impUI.thumb||impUI.preview,topics:picked,quadraticTopics:selectedQuadratic(),note:note.trim(),added:Date.now()};
  try{S.sheets=S.sheets||[];S.sheets.push(sheet);save();}catch(e){sheet.data=sheet.thumb;try{S.sheets.push(sheet);save();}catch(e2){toast('存储空间不够');return;}}
  toast('已存入我的试卷 📁');impUI={step:'list',topics:{},note:'',preview:null,thumb:null,viewId:null};render();}
 function toggleTopic(n){impUI.topics[n]=!impUI.topics[n];render();}
-function confirmImport(){const picked=ALL8.filter(n=>impUI.topics[n]);if(!picked.length){toast('至少勾选一个知识点哦');return;}
+function confirmImport(){const picked=ALL8.filter(n=>impUI.topics[n]);if(!picked.length&&!selectedQuadratic().length){toast('至少勾选一个知识点哦');return;}
  const note=(document.getElementById('sheetNote')||{}).value||impUI.note||'';
  const id='sh'+Date.now().toString(36);
  const sheet={id,date:today(),data:impUI.preview,thumb:impUI.thumb||impUI.preview,topics:picked,note:note.trim(),added:Date.now()};
@@ -462,7 +466,7 @@ function confirmImport(){const picked=ALL8.filter(n=>impUI.topics[n]);if(!picked
  const set=new Set(S.sheetUnlock||[]);picked.forEach(n=>set.add(n));S.sheetUnlock=[...set];
  // The original paper is an image; do not fabricate extracted questions or mark generated questions as original mistakes.
  save();checkBadges();
- toast(`已将试卷关联到 ${picked.length} 个关卡，请在地图中练习`,true);confetti(40);
+ toast(`已关联 ${picked.length+selectedQuadratic().length} 个关卡`,true);confetti(40);
  impUI={step:'list',topics:{},note:'',preview:null,thumb:null,viewId:null};go('map');}
 function viewSheet(id){impUI.viewId=id;impUI.step='detail';render();}
 function vImpDetail(){const sh=(S.sheets||[]).find(x=>x.id===impUI.viewId);if(!sh){impUI.step='list';return vImpList();}
@@ -470,15 +474,15 @@ function vImpDetail(){const sh=(S.sheets||[]).find(x=>x.id===impUI.viewId);if(!s
  <div class="card"><div class="sub">${sh.date}</div>
  <img class="prevw" style="margin:10px 0" src="${sh.data||sh.thumb}" alt="试卷">
  <div><b>关联知识点</b></div>
- <div style="margin:8px 0">${(sh.topics||[]).map(t=>`<span class="pill">${LV[t-1].icon} ${LV[t-1].short}</span>`).join('')||'<span class="sub">无</span>'}</div>
+ <div style="margin:8px 0">${worksheetTopicLabels(sh).map(t=>`<span class="pill">${esc(t)}</span>`).join('')||'<span class="sub">无</span>'}</div>
  ${sh.note?`<div class="hintb"><b>📝 备注</b><br>${esc(sh.note)}</div>`:''}
  <div class="stack" style="margin-top:14px">
   <button class="btn pri block" onclick="practiceSheetTopics('${sh.id}')">练这些知识点 ⚔️</button>
   <button class="btn ghost block" onclick="impUI.step='list';render()">← 返回列表</button>
   <button class="btn ghost block danger" onclick="deleteSheet('${sh.id}')">删除这份试卷</button>
  </div></div>`;}
-function practiceSheetTopics(id){const sh=(S.sheets||[]).find(x=>x.id===id);if(!sh||!sh.topics.length)return;
- const lv=sh.topics.find(n=>lvUnlocked(n))||sh.topics[0];openLevel(lv);}
+function practiceSheetTopics(id){const sh=(S.sheets||[]).find(x=>x.id===id);if(!sh||!(sh.topics||[]).length&&!(sh.quadraticTopics||[]).length)return;
+ const lv=(sh.topics||[]).find(n=>lvUnlocked(n))||(sh.topics||[])[0];if(lv){go('map');openLevel(lv);}else if((sh.quadraticTopics||[]).length){window.location.href='./yiyuan-erci-fangcheng.html?worksheet='+encodeURIComponent((sh.quadraticTopics||[]).join(','));}}
 function deleteSheet(id){S.sheets=(S.sheets||[]).filter(x=>x.id!==id);save();impUI.step='list';render();toast('已删除');}
 
 
