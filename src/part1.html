@@ -218,16 +218,14 @@ h2{margin:0 0 10px;font-size:20px}
 .encourage{background:#e7f9ee;color:#15913f;border-radius:14px;padding:10px 12px;font-weight:800;font-size:15px;margin-top:10px;line-height:1.5}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 .chapter-card{display:block;width:100%;text-align:left;border:2px solid rgba(124,92,255,.14);font:inherit;color:inherit;cursor:pointer}.chapter-card:focus-visible{outline:3px solid #ffbf2e;outline-offset:3px}.chapter-icon{width:58px;height:58px;display:flex;align-items:center;justify-content:center;background:#f0edff;border-radius:18px;font-size:30px}.chapter-card .sub{line-height:1.55}.chapter-card:hover{border-color:#a79aff}
+#nav .in{justify-content:center}#nav button{max-width:240px;width:100%;font-size:16px}#nav button b{font-size:23px}
+.level-sheet{display:flex;align-items:center;gap:8px;justify-content:center;width:100%;margin-top:12px;border:2px dashed #cfc7ff;border-radius:15px;background:#f7f4ff;padding:11px;font-size:14px;font-weight:800;color:#6953ce;cursor:pointer}
+.sheet-prompt{margin:12px 0 0;padding:10px 12px;background:#fff6e9;border-radius:12px;color:#77542c;font-size:13px;line-height:1.6}
 </style>
 </head>
 <body>
 <div id="app"></div>
-<nav id="nav"><div class="in">
- <button data-v="home" onclick="go('home')"><b>🏠</b>首页</button>
- <button data-v="chapters" onclick="go('chapters')"><b>📚</b>数学课程</button>
- <button data-v="wrong" onclick="go('wrong')"><b>📒</b>错题本</button>
- <button data-v="badge" onclick="go('badge')"><b>🏆</b>成就</button>
-</div></nav>
+<nav id="nav"><div class="in"><button data-v="chapters" onclick="go('chapters')"><b>🗺️</b>闯关</button></div></nav>
 <div id="sheet"><div class="in"></div></div>
 <div id="modal"><div class="box"></div></div>
 <div id="toasts"></div>
